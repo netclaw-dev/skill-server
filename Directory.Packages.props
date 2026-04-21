@@ -29,7 +29,7 @@
 
   <!-- Build Dependencies -->
   <ItemGroup Label="Build Dependencies">
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.201" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.203" />
   </ItemGroup>
 
   <!-- Test Dependencies (xUnit 3) -->
