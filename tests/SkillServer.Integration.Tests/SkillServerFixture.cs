@@ -1,3 +1,8 @@
+﻿// -----------------------------------------------------------------------
+// <copyright file="SkillServerFixture.cs" company="Petabridge, LLC">
+//      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
 using Microsoft.AspNetCore.Mvc.Testing;
 using Netclaw.SkillClient;
 using Xunit;

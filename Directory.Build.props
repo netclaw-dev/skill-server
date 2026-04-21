@@ -52,9 +52,11 @@
   <!-- NuGet Package Assets -->
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)netclaw-icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <PropertyGroup>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>netclaw-icon.png</PackageIcon>
   </PropertyGroup>
 </Project>

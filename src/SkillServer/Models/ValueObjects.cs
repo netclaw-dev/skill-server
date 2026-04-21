@@ -1,3 +1,8 @@
+﻿// -----------------------------------------------------------------------
+// <copyright file="ValueObjects.cs" company="Petabridge, LLC">
+//      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;

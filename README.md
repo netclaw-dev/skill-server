@@ -91,13 +91,13 @@ curl -X POST http://localhost:8080/skills \
 Install the client library:
 
 ```bash
-dotnet add package SkillServer.Client
+dotnet add package Netclaw.SkillClient
 ```
 
 Usage:
 
 ```csharp
-using SkillServer.Client;
+using Netclaw.SkillClient;
 
 // Direct instantiation
 using var client = new SkillServerClient("http://localhost:8080");
@@ -170,4 +170,4 @@ Future versions will add:
 
 ## License
 
-Apache-2.0
+Apache-2.0 - Copyright 2025 [Petabridge, LLC](https://petabridge.com)
