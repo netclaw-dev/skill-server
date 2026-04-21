@@ -1,17 +1,37 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Nuget package versions -->
-    <AkkaHostingVersion>1.5.63</AkkaHostingVersion>
   </PropertyGroup>
-  <!-- App dependencies -->
-  <ItemGroup>
-    <PackageVersion Include="Akka.Hosting" Version="$(AkkaHostingVersion)"/>
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.5"/>
+
+  <!-- ASP.NET Core Dependencies -->
+  <ItemGroup Label="ASP.NET Core">
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.0" />
   </ItemGroup>
-  <!-- Test dependencies -->
-  <!-- SourceLink support for all Akka.NET projects -->
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.201"/>
+
+  <!-- Data (Dapper for AOT compatibility) -->
+  <ItemGroup Label="Data">
+    <PackageVersion Include="Dapper" Version="2.1.35" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+
+  <!-- Utilities -->
+  <ItemGroup Label="Utilities">
+    <PackageVersion Include="YamlDotNet" Version="16.3.0" />
+    <PackageVersion Include="SharpZipLib" Version="1.4.2" />
+  </ItemGroup>
+
+  <!-- Build Dependencies -->
+  <ItemGroup Label="Build Dependencies">
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.201" />
+  </ItemGroup>
+
+  <!-- Test Dependencies (xUnit 3) -->
+  <ItemGroup Label="Test Dependencies">
+    <PackageVersion Include="xunit.v3" Version="1.0.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
   </ItemGroup>
 </Project>

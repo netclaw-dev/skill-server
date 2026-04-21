@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/build/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="NuGet.Config" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/SkillServer/SkillServer.csproj" />
+    <Project Path="src/SkillServer.Client/SkillServer.Client.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SkillServer.Tests/SkillServer.Tests.csproj" />
+  </Folder>
+  <Folder Name="/docker/">
+    <File Path="docker/docker-compose.yml" />
+  </Folder>
+</Solution>

@@ -1,0 +1,16 @@
+services:
+  skill-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - skill-data:/data
+    environment:
+      - SKILLSERVER__DATAPATH=/data
+      - SKILLSERVER__BASEURL=http://localhost:8080
+      - ASPNETCORE_URLS=http://+:8080
+
+volumes:
+  skill-data:

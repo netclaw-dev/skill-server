@@ -1,70 +1,173 @@
-# build-system-template
-Akka.NET project build system template that provides standardized build and CI/CD configuration for all Akka.NET projects.
+# SkillServer
 
-## Build System Overview
-This repository contains our standardized build system setup that can be used across all Akka.NET projects. Here are the key components and practices we follow:
+A self-hosted skill server for managing AI agent skills internally within organizations. Similar to self-hosted package registries (BaGet for NuGet, Verdaccio for npm, Docker Registry), SkillServer enables companies to:
 
-### CI/CD Configuration
-We primarily use GitHub Actions for our CI/CD pipelines, but also maintain Azure DevOps pipeline examples. You can find the configuration examples in:
-- `.github/workflows/` - GitHub Actions pipeline examples
-- `.azuredevops/` - Azure DevOps pipeline examples
+- Host proprietary skills behind their firewall
+- Control skill discovery and distribution
+- Version skills with full history
+- Integrate with NetClaw CLI and other AgentSkills.io-compatible agents
 
-### SDK Version Management
-We use `global.json` to pin the .NET SDK version for both CI/CD environments and local development. This ensures consistent builds across all environments and developers.
+## Standards Support
 
-### .NET Tools
-We use local .NET tools to enhance our build and documentation process. The tools are configured in `.config/dotnet-tools.json` and include:
+SkillServer implements two complementary standards:
 
-- [Incrementalist](https://github.com/petabridge/Incrementalist) (v1.0.0-beta4) - Used for determining which projects need to be rebuilt based on Git changes
-- [DocFx](https://dotnet.github.io/docfx/) (v2.78.3) - Used for generating documentation
+- **AgentSkills.io** - The SKILL.md format standard (originally by Anthropic)
+- **Cloudflare Agent Skills Discovery RFC v0.2.0** - Discovery via `/.well-known/agent-skills/index.json`
+- **NetClaw manifest.json** - Backwards compatibility with existing NetClaw infrastructure
 
-To restore these tools in your local environment, run:
-```powershell
-dotnet tool restore
+## Quick Start
+
+### Docker
+
+```bash
+docker compose -f docker/docker-compose.yml up -d
 ```
 
-This command is automatically executed in our CI/CD pipelines (both GitHub Actions and Azure DevOps) to ensure tools are available during builds.
+### .NET
 
-### Centralized Package and Build Management
-We utilize two key MSBuild files for centralized configuration:
-
-1. `Directory.Packages.props` - Implements [Central Package Version Management](https://learn.microsoft.com/nuget/consume-packages/Central-Package-Management) for consistent NuGet package versions across all projects in the solution.
-
-2. `Directory.Build.props` - Defines common build properties, including:
-   - Copyright and author information
-   - Source linking configuration
-   - NuGet package metadata
-   - Common compiler settings
-   - Target framework definitions
-
-### Code Coverage Configuration
-The `coverlet.runsettings` file configures code coverage collection using Coverlet, with settings for:
-- Multiple coverage report formats (JSON, Cobertura, LCOV, TeamCity, OpenCover)
-- Test assembly exclusions
-- Source linking integration
-- Performance optimizations
-
-### Release Management
-Our release process is streamlined through:
-- `RELEASE_NOTES.md` - Contains version history and release notes
-- `build.ps1` - PowerShell script that processes release notes and updates version information
-- Supporting scripts in `/scripts`:
-  - `bumpVersion.ps1` - Updates version numbers
-  - `getReleaseNotes.ps1` - Parses release notes
-
-The build system primarily relies on standard `dotnet` CLI commands, with the PowerShell scripts mainly handling release note processing and version management.
-
-### Solution Format
-We prefer the new `.slnx` XML-based solution format over the traditional `.sln` format. This requires .NET 9 SDK or later. The new format is more concise and easier to work with. You can migrate existing solutions using:
-
-```powershell
-dotnet sln migrate
+```bash
+dotnet run --project src/SkillServer
 ```
 
-For more information about the new `.slnx` format, see the [official announcement](https://devblogs.microsoft.com/dotnet/introducing-slnx-support-dotnet-cli/).
+The server will start at `http://localhost:8080`.
 
-## Getting Started
-1. Ensure you have the correct .NET SDK version installed (check `global.json`)
-2. Clone this repository
-3. Run `dotnet build` to verify the build system
-4. Customize the configuration files for your specific project needs
+## Configuration
+
+Configuration is via environment variables or `appsettings.json`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SKILLSERVER__DATAPATH` | `./data` | Directory for SQLite database and blobs |
+| `SKILLSERVER__BASEURL` | `http://localhost:8080` | Base URL for generating absolute URLs in indexes |
+
+## API Endpoints
+
+### Discovery
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /.well-known/agent-skills/index.json` | RFC-compliant skill index |
+| `GET /manifest.json` | NetClaw-compatible manifest |
+
+### Skills
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /skills` | List all skills |
+| `GET /skills/{name}` | Get skill info (all versions) |
+| `GET /skills/{name}/{version}` | Get specific version metadata |
+| `GET /skills/{name}/{version}/SKILL.md` | Download SKILL.md |
+| `GET /skills/{name}/{version}/{path}` | Download resource file |
+| `POST /skills` | Upload new skill version (multipart/form-data) |
+| `DELETE /skills/{name}/{version}` | Delete version |
+
+### Blobs
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /blobs/sha256/{digest}` | Download blob by digest |
+| `HEAD /blobs/sha256/{digest}` | Check if blob exists |
+
+### Health
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /health` | Health check |
+
+## Uploading Skills
+
+Upload a SKILL.md file:
+
+```bash
+curl -X POST http://localhost:8080/skills \
+  -F "name=my-skill" \
+  -F "version=1.0.0" \
+  -F "category=internal" \
+  -F "file=@SKILL.md"
+```
+
+## Client Library
+
+Install the client library:
+
+```bash
+dotnet add package SkillServer.Client
+```
+
+Usage:
+
+```csharp
+using SkillServer.Client;
+
+// Direct instantiation
+using var client = new SkillServerClient("http://localhost:8080");
+
+// Or via DI
+services.AddSkillServerClient("http://localhost:8080");
+
+// Get RFC index
+var index = await client.GetRfcIndexAsync();
+
+// Get NetClaw manifest
+var manifest = await client.GetNetclawManifestAsync();
+
+// Download a skill
+var content = await client.GetSkillFileAsStringAsync("my-skill", "1.0.0");
+
+// Verify digest
+var isValid = await client.VerifyDigestAsync("my-skill", "1.0.0", "sha256:...");
+```
+
+## NetClaw Integration
+
+Add SkillServer as a skill source:
+
+```bash
+netclaw skill source add my-server --feed http://localhost:8080/manifest.json
+```
+
+## Development
+
+### Prerequisites
+
+- .NET 10 SDK
+
+### Building
+
+```bash
+dotnet build
+```
+
+### Testing
+
+```bash
+dotnet test
+```
+
+### Container Publishing
+
+The project uses .NET's built-in container publishing:
+
+```bash
+dotnet publish src/SkillServer -c Release /t:PublishContainer
+```
+
+## Architecture
+
+- **SQLite** for metadata (skill names, versions, file references)
+- **File system** for blobs (content-addressable storage using SHA-256)
+- **Dapper** for database access (AOT-compatible)
+- **System.Text.Json** with source generators (AOT-compatible)
+
+## Security
+
+For v1, authentication is **not built in**. Deploy behind your firewall or reverse proxy with authentication.
+
+Future versions will add:
+- API key authentication
+- Rate limiting
+- Audit logging
+
+## License
+
+Apache-2.0

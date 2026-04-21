@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(NetLibVersion)</TargetFramework>
+    <RootNamespace>SkillServer.Client</RootNamespace>
+    <AssemblyName>SkillServer.Client</AssemblyName>
+    <Description>Client library for consuming SkillServer APIs.</Description>
+  </PropertyGroup>
+
+  <!-- AOT Compatibility -->
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+</Project>
