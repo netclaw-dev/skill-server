@@ -1,3 +1,4 @@
+using SkillServer;
 using SkillServer.Data;
 using SkillServer.Models;
 using SkillServer.Services;
@@ -12,9 +13,6 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 // Add OpenAPI
 builder.Services.AddOpenApi();
-
-// Add controllers
-builder.Services.AddControllers();
 
 // Add services
 builder.Services.AddSingleton<DatabaseInitializer>();
@@ -35,9 +33,6 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.MapControllers();
-
-// Health check
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }));
+app.MapSkillServerEndpoints();
 
 app.Run();
