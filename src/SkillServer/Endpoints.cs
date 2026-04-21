@@ -259,10 +259,7 @@ public static class Endpoints
             string digest,
             BlobStorage blobStorage) =>
         {
-            var stream = blobStorage.GetBlob(digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
-                ? digest
-                : $"sha256:{digest}");
-
+            var stream = blobStorage.GetBlob(digest);
             if (stream is null)
                 return Results.NotFound();
 

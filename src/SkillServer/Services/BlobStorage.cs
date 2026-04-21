@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using SkillServer.Models;
 
 namespace SkillServer.Services;
 
@@ -88,7 +89,7 @@ public sealed class BlobStorage
     /// </summary>
     public Stream? GetBlob(string digest)
     {
-        var hashHex = NormalizeDigest(digest);
+        var hashHex = Sha256Digest.Create(digest).HexValue;
         var blobPath = GetBlobPath(hashHex);
 
         if (!File.Exists(blobPath))
@@ -102,7 +103,7 @@ public sealed class BlobStorage
     /// </summary>
     public bool Exists(string digest)
     {
-        var hashHex = NormalizeDigest(digest);
+        var hashHex = Sha256Digest.Create(digest).HexValue;
         return File.Exists(GetBlobPath(hashHex));
     }
 
@@ -111,23 +112,14 @@ public sealed class BlobStorage
     /// </summary>
     public string? GetBlobFilePath(string digest)
     {
-        var hashHex = NormalizeDigest(digest);
+        var hashHex = Sha256Digest.Create(digest).HexValue;
         var path = GetBlobPath(hashHex);
         return File.Exists(path) ? path : null;
     }
 
     private string GetBlobPath(string hashHex)
     {
-        // Use first 8 chars as subdirectory for filesystem efficiency
         var prefix = hashHex[..8];
         return Path.Combine(_blobsPath, prefix, hashHex);
-    }
-
-    private static string NormalizeDigest(string digest)
-    {
-        // Remove "sha256:" prefix if present
-        return digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
-            ? digest[7..].ToLowerInvariant()
-            : digest.ToLowerInvariant();
     }
 }

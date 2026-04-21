@@ -35,7 +35,6 @@ public sealed class IndexGenerator
         foreach (var v in latestVersions)
         {
             var files = await _repository.GetFilesAsync(v.Id, ct);
-            var digest = NormalizeDigest(v.Sha256);
 
             entries.Add(new RfcSkillEntry
             {
@@ -45,13 +44,13 @@ public sealed class IndexGenerator
                 Url = v.SkillType == SkillTypes.SkillMd
                     ? $"{baseUrl}/skills/{v.SkillName}/{v.Version}/SKILL.md"
                     : $"{baseUrl}/skills/{v.SkillName}/{v.Version}/archive.tar.gz",
-                Digest = digest,
+                Digest = Sha256Digest.Create(v.Sha256).Value,
                 Version = v.Version,
                 Resources = files.Count > 0
                     ? files.Select(f => new RfcResourceEntry
                     {
                         Path = f.RelativePath,
-                        Digest = NormalizeDigest(f.Sha256),
+                        Digest = Sha256Digest.Create(f.Sha256).Value,
                         Url = $"{baseUrl}/skills/{v.SkillName}/{v.Version}/{f.RelativePath}"
                     }).ToList()
                     : null
@@ -62,9 +61,6 @@ public sealed class IndexGenerator
 
         return new RfcSkillIndex { Skills = entries };
     }
-
-    private static string NormalizeDigest(string sha256) =>
-        sha256.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? sha256 : $"sha256:{sha256}";
 
     private string GetBaseUrl()
     {
