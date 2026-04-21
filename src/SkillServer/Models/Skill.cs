@@ -41,6 +41,24 @@ public sealed record SkillFile
 }
 
 /// <summary>
+/// Skill version with file count for batch queries.
+/// </summary>
+public sealed record SkillVersionWithFileCount
+{
+    public required long Id { get; init; }
+    public required long SkillId { get; init; }
+    public required string Version { get; init; }
+    public required string Description { get; init; }
+    public string? Category { get; init; }
+    public required string SkillType { get; init; }
+    public required string Sha256 { get; init; }
+    public required long SizeBytes { get; init; }
+    public required DateTimeOffset PublishedAt { get; init; }
+    public required bool IsLatest { get; init; }
+    public required int FileCount { get; init; }
+}
+
+/// <summary>
 /// Skill version with denormalized skill metadata for batch queries.
 /// </summary>
 public sealed record SkillVersionWithMetadata

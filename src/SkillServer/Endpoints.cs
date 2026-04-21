@@ -51,15 +51,9 @@ public static class Endpoints
         int? take,
         CancellationToken ct)
     {
-        var latestVersions = await repository.GetAllLatestVersionsWithMetadataAsync(ct);
+        var latestVersions = await repository.GetAllLatestVersionsWithMetadataAsync(skip, take, ct);
 
-        IEnumerable<SkillVersionWithMetadata> results = latestVersions;
-        if (skip.HasValue)
-            results = results.Skip(skip.Value);
-        if (take.HasValue)
-            results = results.Take(take.Value);
-
-        var summaries = results.Select(v => new SkillSummary
+        var summaries = latestVersions.Select(v => new SkillSummary
         {
             Name = v.SkillName,
             Description = v.Description,
@@ -82,25 +76,19 @@ public static class Endpoints
         if (skill is null)
             return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Skill '{name}' not found." });
 
-        var versions = await repository.GetAllVersionsAsync(skill.Id, ct);
-        var summaries = new List<SkillVersionSummary>();
-
-        foreach (var version in versions)
+        var versions = await repository.GetAllVersionsWithFileCountAsync(skill.Id, ct);
+        var summaries = versions.Select(v => new SkillVersionSummary
         {
-            var files = await repository.GetFilesAsync(version.Id, ct);
-            summaries.Add(new SkillVersionSummary
-            {
-                Name = skill.Name,
-                Version = version.Version,
-                Description = version.Description,
-                Category = version.Category,
-                Sha256 = version.Sha256,
-                SizeBytes = version.SizeBytes,
-                PublishedAt = version.PublishedAt,
-                IsLatest = version.IsLatest,
-                FileCount = files.Count
-            });
-        }
+            Name = skill.Name,
+            Version = v.Version,
+            Description = v.Description,
+            Category = v.Category,
+            Sha256 = v.Sha256,
+            SizeBytes = v.SizeBytes,
+            PublishedAt = v.PublishedAt,
+            IsLatest = v.IsLatest,
+            FileCount = v.FileCount
+        }).ToList();
 
         return Results.Json(summaries, SkillServerJsonContext.Default.IReadOnlyListSkillVersionSummary);
     }

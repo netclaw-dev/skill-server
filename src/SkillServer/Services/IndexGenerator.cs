@@ -28,7 +28,7 @@ public sealed class IndexGenerator
     public async Task<RfcSkillIndex> GenerateRfcIndexAsync(CancellationToken ct = default)
     {
         var baseUrl = GetBaseUrl();
-        var latestVersions = await _repository.GetAllLatestVersionsWithMetadataAsync(ct);
+        var latestVersions = await _repository.GetAllLatestVersionsWithMetadataAsync(ct: ct);
 
         var entries = new List<RfcSkillEntry>(latestVersions.Count);
 

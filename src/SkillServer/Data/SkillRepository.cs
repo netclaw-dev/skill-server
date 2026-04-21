@@ -130,11 +130,31 @@ public sealed class SkillRepository
         return versions.ToList();
     }
 
-    public async Task<IReadOnlyList<SkillVersionWithMetadata>> GetAllLatestVersionsWithMetadataAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<SkillVersionWithFileCount>> GetAllVersionsWithFileCountAsync(long skillId, CancellationToken ct = default)
     {
         await using var connection = new SqliteConnection(_connectionString);
-        var versions = await connection.QueryAsync<SkillVersionWithMetadata>(
+        var versions = await connection.QueryAsync<SkillVersionWithFileCount>(
             """
+            SELECT sv.id AS Id, sv.skill_id AS SkillId, sv.version AS Version, sv.description AS Description,
+                   sv.category AS Category, sv.skill_type AS SkillType, sv.sha256 AS Sha256,
+                   sv.size_bytes AS SizeBytes, sv.published_at AS PublishedAt, sv.is_latest AS IsLatest,
+                   (SELECT COUNT(*) FROM skill_files sf WHERE sf.skill_version_id = sv.id) AS FileCount
+            FROM skill_versions sv
+            WHERE sv.skill_id = @skillId
+            ORDER BY sv.published_at DESC
+            """,
+            new { skillId });
+        return versions.ToList();
+    }
+
+    public async Task<IReadOnlyList<SkillVersionWithMetadata>> GetAllLatestVersionsWithMetadataAsync(
+        int? skip = null,
+        int? take = null,
+        CancellationToken ct = default)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+
+        var sql = """
             SELECT sv.id AS Id, sv.skill_id AS SkillId, sv.version AS Version, sv.description AS Description,
                    sv.category AS Category, sv.skill_type AS SkillType, sv.sha256 AS Sha256,
                    sv.size_bytes AS SizeBytes, sv.published_at AS PublishedAt, sv.is_latest AS IsLatest,
@@ -144,7 +164,14 @@ public sealed class SkillRepository
             JOIN skills s ON s.id = sv.skill_id
             WHERE sv.is_latest = 1
             ORDER BY s.name
-            """);
+            """;
+
+        if (take.HasValue)
+            sql += $" LIMIT {take.Value}";
+        if (skip.HasValue)
+            sql += $" OFFSET {skip.Value}";
+
+        var versions = await connection.QueryAsync<SkillVersionWithMetadata>(sql);
         return versions.ToList();
     }
 
