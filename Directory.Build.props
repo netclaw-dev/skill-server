@@ -5,8 +5,8 @@
     <Authors>Petabridge</Authors>
     <Company>Petabridge</Company>
     <Product>SkillServer</Product>
-    <PackageProjectUrl>https://github.com/Aaronontheweb/netclaw</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/Aaronontheweb/netclaw</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/netclaw-dev/skill-server</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/netclaw-dev/skill-server</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>agent-skills;ai;skills;skill-server;netclaw</PackageTags>
   </PropertyGroup>
