@@ -8,7 +8,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SkillServer/SkillServer.csproj" />
-    <Project Path="src/SkillServer.Client/SkillServer.Client.csproj" />
+    <Project Path="src/Netclaw.SkillClient/Netclaw.SkillClient.csproj" />
     <Project Path="src/SkillServer.AppHost/SkillServer.AppHost.csproj" />
   </Folder>
   <Folder Name="/tests/">

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
-using SkillServer.Client;
+using Netclaw.SkillClient;
 using Xunit;
 
 namespace SkillServer.Integration.Tests;

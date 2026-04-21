@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace SkillServer.Client;
+namespace Netclaw.SkillClient;
 
 /// <summary>
 /// Extension methods for registering SkillServerClient with DI.

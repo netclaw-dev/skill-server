@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Testing;
-using SkillServer.Client;
+using Netclaw.SkillClient;
 using Xunit;
 
 namespace SkillServer.Integration.Tests;

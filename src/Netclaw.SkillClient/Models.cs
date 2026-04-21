@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace SkillServer.Client;
+namespace Netclaw.SkillClient;
 
 /// <summary>
 /// RFC-compliant skill index.

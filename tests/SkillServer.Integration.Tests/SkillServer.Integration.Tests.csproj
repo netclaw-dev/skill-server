@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SkillServer\SkillServer.csproj" />
-    <ProjectReference Include="..\..\src\SkillServer.Client\SkillServer.Client.csproj" />
+    <ProjectReference Include="..\..\src\Netclaw.SkillClient\Netclaw.SkillClient.csproj" />
   </ItemGroup>
 
 </Project>

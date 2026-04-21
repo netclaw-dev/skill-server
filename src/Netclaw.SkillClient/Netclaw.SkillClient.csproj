@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>$(NetLibVersion)</TargetFramework>
-    <RootNamespace>SkillServer.Client</RootNamespace>
-    <AssemblyName>SkillServer.Client</AssemblyName>
+    <RootNamespace>Netclaw.SkillClient</RootNamespace>
+    <AssemblyName>Netclaw.SkillClient</AssemblyName>
     <Description>Client library for consuming SkillServer APIs.</Description>
   </PropertyGroup>
 

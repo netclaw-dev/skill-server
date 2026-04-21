@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace SkillServer.Client;
+namespace Netclaw.SkillClient;
 
 /// <summary>
 /// Client for consuming SkillServer APIs.
