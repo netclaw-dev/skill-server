@@ -40,9 +40,9 @@ public sealed class IndexGenerator
             entries.Add(new RfcSkillEntry
             {
                 Name = v.SkillName,
-                Type = v.SkillType == SkillType.SkillMd ? "skill-md" : "archive",
+                Type = v.SkillType,
                 Description = v.Description,
-                Url = v.SkillType == SkillType.SkillMd
+                Url = v.SkillType == SkillTypes.SkillMd
                     ? $"{baseUrl}/skills/{v.SkillName}/{v.Version}/SKILL.md"
                     : $"{baseUrl}/skills/{v.SkillName}/{v.Version}/archive.tar.gz",
                 Digest = digest,

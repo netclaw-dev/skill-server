@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using SkillServer.Data;
 using SkillServer.Models;
 using SkillServer.Services;
@@ -10,6 +11,7 @@ public static class Endpoints
     {
         app.MapDiscoveryEndpoints();
         app.MapSkillEndpoints();
+        app.MapBlobEndpoints();
         app.MapHealthEndpoints();
         return app;
     }
@@ -186,10 +188,10 @@ public static class Endpoints
     }
 
     private static async Task<IResult> UploadSkill(
-        IFormFile file,
-        string name,
-        string version,
-        string? category,
+        [FromForm] IFormFile file,
+        [FromForm] string name,
+        [FromForm] string version,
+        [FromForm] string? category,
         SkillUploadService uploadService,
         IConfiguration configuration,
         CancellationToken ct)
@@ -261,6 +263,23 @@ public static class Endpoints
             return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Version '{version}' not found." });
 
         return Results.NoContent();
+    }
+
+    private static void MapBlobEndpoints(this WebApplication app)
+    {
+        app.MapGet("/blobs/sha256/{digest}", (
+            string digest,
+            BlobStorage blobStorage) =>
+        {
+            var stream = blobStorage.GetBlob(digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
+                ? digest
+                : $"sha256:{digest}");
+
+            if (stream is null)
+                return Results.NotFound();
+
+            return Results.File(stream, "application/octet-stream");
+        });
     }
 
     private static string GetContentType(string path) => Path.GetExtension(path).ToLowerInvariant() switch

@@ -6,15 +6,27 @@ using SkillServer.Models;
 namespace SkillServer.Data;
 
 /// <summary>
-/// Dapper type handler for SkillType enum to/from database string.
+/// Initializes Dapper type handlers for SQLite.
 /// </summary>
-public sealed class SkillTypeHandler : SqlMapper.TypeHandler<SkillType>
+public static class DapperConfiguration
 {
-    public override void SetValue(IDbDataParameter parameter, SkillType value) =>
-        parameter.Value = value == SkillType.SkillMd ? "skill-md" : "archive";
+    private static bool _initialized;
 
-    public override SkillType Parse(object value) =>
-        value?.ToString() == "skill-md" ? SkillType.SkillMd : SkillType.Archive;
+    public static void Initialize()
+    {
+        if (_initialized) return;
+        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+        _initialized = true;
+    }
+
+    private sealed class DateTimeOffsetHandler : SqlMapper.TypeHandler<DateTimeOffset>
+    {
+        public override void SetValue(IDbDataParameter parameter, DateTimeOffset value) =>
+            parameter.Value = value.ToString("O");
+
+        public override DateTimeOffset Parse(object value) =>
+            DateTimeOffset.Parse(value.ToString()!);
+    }
 }
 
 /// <summary>
@@ -26,6 +38,7 @@ public sealed class SkillRepository
 
     public SkillRepository(DatabaseInitializer initializer)
     {
+        DapperConfiguration.Initialize();
         _connectionString = initializer.ConnectionString;
     }
 
@@ -148,7 +161,7 @@ public sealed class SkillRepository
         string version,
         string description,
         string? category,
-        SkillType skillType,
+        string skillType,
         string sha256,
         long sizeBytes,
         CancellationToken ct = default)
@@ -166,7 +179,7 @@ public sealed class SkillRepository
                 transaction);
 
             var now = DateTimeOffset.UtcNow.ToString("O");
-            var typeString = skillType == SkillType.SkillMd ? "skill-md" : "archive";
+            var typeString = skillType;
 
             var versionId = await connection.ExecuteScalarAsync<long>(
                 """

@@ -97,7 +97,7 @@ public sealed partial class SkillUploadService
             version.Value,
             description,
             category ?? frontmatter.Metadata?.GetValueOrDefault("category"),
-            SkillType.SkillMd,
+            SkillTypes.SkillMd,
             parsedDigest.Value,
             sizeBytes,
             ct);

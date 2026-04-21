@@ -1,0 +1,14 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.1.2">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(NetLibVersion)</TargetFramework>
+    <RootNamespace>SkillServer.AppHost</RootNamespace>
+    <AssemblyName>SkillServer.AppHost</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SkillServer\SkillServer.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -21,7 +21,7 @@ public sealed record SkillVersion
     public required string Version { get; init; }
     public required string Description { get; init; }
     public string? Category { get; init; }
-    public required SkillType SkillType { get; init; }
+    public required string SkillType { get; init; }
     public required string Sha256 { get; init; }
     public required long SizeBytes { get; init; }
     public required DateTimeOffset PublishedAt { get; init; }
@@ -41,18 +41,6 @@ public sealed record SkillFile
 }
 
 /// <summary>
-/// Type of skill artifact.
-/// </summary>
-public enum SkillType
-{
-    /// <summary>Single SKILL.md file.</summary>
-    SkillMd,
-
-    /// <summary>Archive containing SKILL.md and resources.</summary>
-    Archive
-}
-
-/// <summary>
 /// Skill version with denormalized skill metadata for batch queries.
 /// </summary>
 public sealed record SkillVersionWithMetadata
@@ -62,7 +50,7 @@ public sealed record SkillVersionWithMetadata
     public required string Version { get; init; }
     public required string Description { get; init; }
     public string? Category { get; init; }
-    public required SkillType SkillType { get; init; }
+    public required string SkillType { get; init; }
     public required string Sha256 { get; init; }
     public required long SizeBytes { get; init; }
     public required DateTimeOffset PublishedAt { get; init; }
@@ -71,4 +59,13 @@ public sealed record SkillVersionWithMetadata
     public required DateTimeOffset SkillCreatedAt { get; init; }
     public required DateTimeOffset SkillUpdatedAt { get; init; }
     public required int VersionCount { get; init; }
+}
+
+/// <summary>
+/// Skill type constants.
+/// </summary>
+public static class SkillTypes
+{
+    public const string SkillMd = "skill-md";
+    public const string Archive = "archive";
 }

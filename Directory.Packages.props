@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <AspireVersion>13.1.2</AspireVersion>
   </PropertyGroup>
 
   <!-- ASP.NET Core Dependencies -->
@@ -19,6 +20,11 @@
   <ItemGroup Label="Utilities">
     <PackageVersion Include="YamlDotNet" Version="16.3.0" />
     <PackageVersion Include="SharpZipLib" Version="1.4.2" />
+  </ItemGroup>
+
+  <!-- Aspire -->
+  <ItemGroup Label="Aspire">
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
   </ItemGroup>
 
   <!-- Build Dependencies -->

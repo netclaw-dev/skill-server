@@ -36,3 +36,5 @@ if (app.Environment.IsDevelopment())
 app.MapSkillServerEndpoints();
 
 app.Run();
+
+public partial class Program;
