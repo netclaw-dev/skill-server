@@ -1,8 +1,6 @@
 services:
   skill-server:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: skillserver:latest
     ports:
       - "8080:8080"
     volumes:

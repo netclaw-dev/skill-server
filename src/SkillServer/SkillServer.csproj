@@ -4,18 +4,23 @@
     <TargetFramework>$(NetLibVersion)</TargetFramework>
     <RootNamespace>SkillServer</RootNamespace>
     <AssemblyName>SkillServer</AssemblyName>
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+    <ContainerRepository>skillserver</ContainerRepository>
+    <ContainerTitle>skillserver</ContainerTitle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ContainerPort Include="8080" Type="tcp" />
+  </ItemGroup>
+
+  <PropertyGroup Label="ServerRuntimeConfig">
+    <TieredPGO>true</TieredPGO>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
 
   <!-- AOT Preparation (MVC not fully AOT-compatible yet, but we prepare where possible) -->
   <PropertyGroup>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
-  </PropertyGroup>
-
-  <!-- Container Publishing -->
-  <PropertyGroup>
-    <ContainerRepository>skillserver</ContainerRepository>
-    <ContainerImageTags>latest;$(Version)</ContainerImageTags>
-    <ContainerFamily>alpine</ContainerFamily>
   </PropertyGroup>
 
   <ItemGroup>
