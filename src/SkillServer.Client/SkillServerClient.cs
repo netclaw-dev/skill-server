@@ -34,7 +34,7 @@ public sealed class SkillServerClient : IDisposable
     }
 
     /// <summary>
-    /// Gets the RFC-compliant skill index.
+    /// Gets the RFC-compliant skill index per Cloudflare Agent Skills Discovery RFC v0.2.0.
     /// </summary>
     public async Task<RfcSkillIndex?> GetRfcIndexAsync(CancellationToken ct = default)
     {
@@ -45,23 +45,21 @@ public sealed class SkillServerClient : IDisposable
     }
 
     /// <summary>
-    /// Gets the NetClaw-compatible manifest.
+    /// Lists all skills with optional pagination.
     /// </summary>
-    public async Task<NetclawManifest?> GetNetclawManifestAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<SkillSummary>> ListSkillsAsync(
+        int? skip = null,
+        int? take = null,
+        CancellationToken ct = default)
     {
-        return await _httpClient.GetFromJsonAsync(
-            "manifest.json",
-            SkillServerClientJsonContext.Default.NetclawManifest,
-            ct);
-    }
+        var query = new List<string>();
+        if (skip.HasValue) query.Add($"skip={skip.Value}");
+        if (take.HasValue) query.Add($"take={take.Value}");
 
-    /// <summary>
-    /// Lists all skills.
-    /// </summary>
-    public async Task<IReadOnlyList<SkillSummary>> ListSkillsAsync(CancellationToken ct = default)
-    {
+        var url = query.Count > 0 ? $"skills?{string.Join("&", query)}" : "skills";
+
         var result = await _httpClient.GetFromJsonAsync(
-            "skills",
+            url,
             SkillServerClientJsonContext.Default.IReadOnlyListSkillSummary,
             ct);
         return result ?? [];

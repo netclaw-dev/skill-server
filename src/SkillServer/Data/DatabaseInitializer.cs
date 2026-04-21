@@ -1,5 +1,6 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
+using SkillServer.Models;
 
 namespace SkillServer.Data;
 
@@ -8,6 +9,7 @@ namespace SkillServer.Data;
 /// </summary>
 public sealed class DatabaseInitializer
 {
+    private static bool _typeHandlersRegistered;
     private readonly string _connectionString;
     private readonly ILogger<DatabaseInitializer> _logger;
 
@@ -17,9 +19,18 @@ public sealed class DatabaseInitializer
         Directory.CreateDirectory(dataPath);
         _connectionString = $"Data Source={Path.Combine(dataPath, "skills.db")}";
         _logger = logger;
+
+        RegisterTypeHandlers();
     }
 
     public string ConnectionString => _connectionString;
+
+    private static void RegisterTypeHandlers()
+    {
+        if (_typeHandlersRegistered) return;
+        SqlMapper.AddTypeHandler(new SkillTypeHandler());
+        _typeHandlersRegistered = true;
+    }
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {

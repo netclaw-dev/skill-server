@@ -57,75 +57,6 @@ public sealed record RfcResourceEntry
 }
 
 /// <summary>
-/// NetClaw-compatible manifest.
-/// </summary>
-public sealed record NetclawManifest
-{
-    [JsonPropertyName("schemaVersion")]
-    public int SchemaVersion { get; init; }
-
-    [JsonPropertyName("feedType")]
-    public string FeedType { get; init; } = "";
-
-    [JsonPropertyName("updatedAt")]
-    public DateTimeOffset UpdatedAt { get; init; }
-
-    [JsonPropertyName("skills")]
-    public IReadOnlyList<NetclawSkillEntry> Skills { get; init; } = [];
-}
-
-/// <summary>
-/// NetClaw skill entry.
-/// </summary>
-public sealed record NetclawSkillEntry
-{
-    [JsonPropertyName("name")]
-    public string Name { get; init; } = "";
-
-    [JsonPropertyName("version")]
-    public string Version { get; init; } = "";
-
-    [JsonPropertyName("minimumDaemonVersion")]
-    public string? MinimumDaemonVersion { get; init; }
-
-    [JsonPropertyName("sha256")]
-    public string Sha256 { get; init; } = "";
-
-    [JsonPropertyName("sizeBytes")]
-    public long SizeBytes { get; init; }
-
-    [JsonPropertyName("url")]
-    public string Url { get; init; } = "";
-
-    [JsonPropertyName("category")]
-    public string? Category { get; init; }
-
-    [JsonPropertyName("description")]
-    public string Description { get; init; } = "";
-
-    [JsonPropertyName("files")]
-    public IReadOnlyList<NetclawFileEntry>? Files { get; init; }
-}
-
-/// <summary>
-/// NetClaw file entry.
-/// </summary>
-public sealed record NetclawFileEntry
-{
-    [JsonPropertyName("path")]
-    public string Path { get; init; } = "";
-
-    [JsonPropertyName("sha256")]
-    public string Sha256 { get; init; } = "";
-
-    [JsonPropertyName("sizeBytes")]
-    public long SizeBytes { get; init; }
-
-    [JsonPropertyName("url")]
-    public string Url { get; init; } = "";
-}
-
-/// <summary>
 /// Skill summary.
 /// </summary>
 public sealed record SkillSummary
@@ -189,7 +120,6 @@ public sealed record SkillVersionSummary
 /// JSON serialization context for AOT support.
 /// </summary>
 [JsonSerializable(typeof(RfcSkillIndex))]
-[JsonSerializable(typeof(NetclawManifest))]
 [JsonSerializable(typeof(IReadOnlyList<SkillSummary>))]
 [JsonSerializable(typeof(IReadOnlyList<SkillVersionSummary>))]
 [JsonSerializable(typeof(SkillVersionSummary))]

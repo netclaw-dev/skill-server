@@ -1,8 +1,21 @@
+using System.Data;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using SkillServer.Models;
 
 namespace SkillServer.Data;
+
+/// <summary>
+/// Dapper type handler for SkillType enum to/from database string.
+/// </summary>
+public sealed class SkillTypeHandler : SqlMapper.TypeHandler<SkillType>
+{
+    public override void SetValue(IDbDataParameter parameter, SkillType value) =>
+        parameter.Value = value == SkillType.SkillMd ? "skill-md" : "archive";
+
+    public override SkillType Parse(object value) =>
+        value?.ToString() == "skill-md" ? SkillType.SkillMd : SkillType.Archive;
+}
 
 /// <summary>
 /// Repository for skill metadata operations using Dapper.
@@ -104,21 +117,30 @@ public sealed class SkillRepository
         return versions.ToList();
     }
 
-    public async Task<IReadOnlyList<SkillVersion>> GetAllLatestVersionsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<SkillVersionWithMetadata>> GetAllLatestVersionsWithMetadataAsync(CancellationToken ct = default)
     {
         await using var connection = new SqliteConnection(_connectionString);
-        var versions = await connection.QueryAsync<SkillVersion>(
+        var versions = await connection.QueryAsync<SkillVersionWithMetadata>(
             """
             SELECT sv.id AS Id, sv.skill_id AS SkillId, sv.version AS Version, sv.description AS Description,
                    sv.category AS Category, sv.skill_type AS SkillType, sv.sha256 AS Sha256,
                    sv.size_bytes AS SizeBytes, sv.published_at AS PublishedAt, sv.is_latest AS IsLatest,
-                   s.name AS Name
+                   s.name AS SkillName, s.created_at AS SkillCreatedAt, s.updated_at AS SkillUpdatedAt,
+                   (SELECT COUNT(*) FROM skill_versions sv2 WHERE sv2.skill_id = s.id) AS VersionCount
             FROM skill_versions sv
             JOIN skills s ON s.id = sv.skill_id
             WHERE sv.is_latest = 1
             ORDER BY s.name
             """);
         return versions.ToList();
+    }
+
+    public async Task<int> GetVersionCountAsync(long skillId, CancellationToken ct = default)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        return await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM skill_versions WHERE skill_id = @skillId",
+            new { skillId });
     }
 
     public async Task<long> CreateVersionAsync(

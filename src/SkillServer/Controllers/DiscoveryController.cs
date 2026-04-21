@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using SkillServer.Models;
 using SkillServer.Services;
@@ -6,7 +5,7 @@ using SkillServer.Services;
 namespace SkillServer.Controllers;
 
 /// <summary>
-/// Serves discovery indexes for RFC and NetClaw formats.
+/// Serves the RFC-compliant skill discovery index.
 /// </summary>
 [ApiController]
 public sealed class DiscoveryController : ControllerBase
@@ -19,7 +18,7 @@ public sealed class DiscoveryController : ControllerBase
     }
 
     /// <summary>
-    /// RFC-compliant discovery index.
+    /// RFC-compliant discovery index per Cloudflare Agent Skills Discovery RFC v0.2.0.
     /// </summary>
     [HttpGet("/.well-known/agent-skills/index.json")]
     [Produces("application/json")]
@@ -27,16 +26,5 @@ public sealed class DiscoveryController : ControllerBase
     {
         var index = await _indexGenerator.GenerateRfcIndexAsync(ct);
         return new JsonResult(index, SkillServerJsonContext.Default.RfcSkillIndex);
-    }
-
-    /// <summary>
-    /// NetClaw-compatible manifest.
-    /// </summary>
-    [HttpGet("/manifest.json")]
-    [Produces("application/json")]
-    public async Task<IActionResult> GetNetclawManifest(CancellationToken ct)
-    {
-        var manifest = await _indexGenerator.GenerateNetclawManifestAsync(ct);
-        return new JsonResult(manifest, SkillServerJsonContext.Default.NetclawManifest);
     }
 }

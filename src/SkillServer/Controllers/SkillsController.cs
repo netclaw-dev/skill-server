@@ -30,32 +30,32 @@ public sealed class SkillsController : ControllerBase
     }
 
     /// <summary>
-    /// List all skills.
+    /// List all skills with optional pagination.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> ListSkills(CancellationToken ct)
+    public async Task<IActionResult> ListSkills(
+        [FromQuery] int? skip,
+        [FromQuery] int? take,
+        CancellationToken ct)
     {
-        var skills = await _repository.GetAllSkillsAsync(ct);
-        var summaries = new List<SkillSummary>();
+        var latestVersions = await _repository.GetAllLatestVersionsWithMetadataAsync(ct);
 
-        foreach (var skill in skills)
+        IEnumerable<SkillVersionWithMetadata> results = latestVersions;
+        if (skip.HasValue)
+            results = results.Skip(skip.Value);
+        if (take.HasValue)
+            results = results.Take(take.Value);
+
+        var summaries = results.Select(v => new SkillSummary
         {
-            var latestVersion = await _repository.GetLatestVersionAsync(skill.Id, ct);
-            if (latestVersion is null) continue;
-
-            var allVersions = await _repository.GetAllVersionsAsync(skill.Id, ct);
-
-            summaries.Add(new SkillSummary
-            {
-                Name = skill.Name,
-                Description = latestVersion.Description,
-                LatestVersion = latestVersion.Version,
-                Category = latestVersion.Category,
-                VersionCount = allVersions.Count,
-                CreatedAt = skill.CreatedAt,
-                UpdatedAt = skill.UpdatedAt
-            });
-        }
+            Name = v.SkillName,
+            Description = v.Description,
+            LatestVersion = v.Version,
+            Category = v.Category,
+            VersionCount = v.VersionCount,
+            CreatedAt = v.SkillCreatedAt,
+            UpdatedAt = v.SkillUpdatedAt
+        }).ToList();
 
         return new JsonResult(summaries, SkillServerJsonContext.Default.IReadOnlyListSkillSummary);
     }
