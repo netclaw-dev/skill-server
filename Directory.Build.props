@@ -26,6 +26,11 @@
     <PackageReleaseNotes>Initial release</PackageReleaseNotes>
   </PropertyGroup>
 
+  <!-- Default: non-packable unless explicitly set -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
   <!-- Target Framework Definitions -->
   <PropertyGroup>
     <NetLibVersion>net10.0</NetLibVersion>
