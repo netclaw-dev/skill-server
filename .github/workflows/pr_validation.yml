@@ -44,15 +44,53 @@ jobs:
       - name: "dotnet build"
         run: dotnet build -c Release
 
-      # .NET Framework tests can't run reliably on Linux, so we only do .NET 8
-
       - name: "dotnet test"
         shell: bash
-        run: dotnet test -c Release 
+        run: dotnet test -c Release
+
+  pack:
+    name: NuGet Pack
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v6.0.2
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: "Install .NET SDK"
+        uses: actions/setup-dotnet@v5.1.0
+        with:
+          global-json-file: "./global.json"
 
       - name: "dotnet pack"
         run: dotnet pack -c Release -o ./bin/nuget
 
+      - name: "Upload NuGet Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./bin/nuget/*.nupkg
+          retention-days: 7
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v6.0.2
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: "Install .NET SDK"
+        uses: actions/setup-dotnet@v5.1.0
+        with:
+          global-json-file: "./global.json"
+
       - name: "Build Container Image"
-        if: matrix.os == 'ubuntu-latest'
         run: dotnet publish src/SkillServer/SkillServer.csproj -c Release /t:PublishContainer
