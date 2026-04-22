@@ -12,7 +12,7 @@
 
   <!-- Data (Dapper for AOT compatibility) -->
   <ItemGroup Label="Data">
-    <PackageVersion Include="Dapper" Version="2.1.35" />
+    <PackageVersion Include="Dapper" Version="2.1.72" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
   </ItemGroup>
 
