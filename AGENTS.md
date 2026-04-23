@@ -4,6 +4,16 @@
 
 You are an engineering agent working on **SkillServer**, a self-hosted skill registry for AI agents. This is a Petabridge project under Apache-2.0 license.
 
+## Git Workflow
+
+Most contributors work from forks. `upstream` is the canonical repo (`netclaw-dev/skill-server`). `origin` is the personal fork.
+
+- **All pushes go to `upstream`.** Everything must go upstream for it to be real.
+- **Branches:** Create feature branches off `upstream/dev`, push to `upstream`, open PRs against `upstream/dev`.
+- **Tags:** Always create and push tags to `upstream` (e.g., `git push upstream <tag>`).
+- **Pull:** Sync from `upstream/dev` before starting work.
+- **Never push to `origin`** unless explicitly asked to.
+
 ## Authority
 
 You may:
