@@ -9,14 +9,7 @@
       ],
       "rollForward": false
     },
-    "docfx": {
-      "version": "2.78.3",
-      "commands": [
-        "docfx"
-      ],
-      "rollForward": false
-    },
-    "slopwatch.cmd": {
+     "slopwatch.cmd": {
       "version": "0.4.0",
       "commands": [
         "slopwatch"

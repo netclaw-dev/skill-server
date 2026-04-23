@@ -6,7 +6,6 @@
 |------|--------------|---------|
 | .NET SDK 10.0 | [dotnet.microsoft.com](https://dotnet.microsoft.com) | Build, test, publish |
 | Incrementalist | `dotnet tool restore` | Release notes from commits |
-| DocFX | `dotnet tool restore` | Documentation generation |
 
 ## Build Commands
 
