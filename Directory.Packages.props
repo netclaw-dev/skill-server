@@ -7,7 +7,7 @@
   <!-- ASP.NET Core Dependencies -->
   <ItemGroup Label="ASP.NET Core">
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.7" />
   </ItemGroup>
 
   <!-- Data (Dapper for AOT compatibility) -->
