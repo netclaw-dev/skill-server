@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="YamlDotNet" />
     <ProjectReference Include="..\SkillServer\SkillServer.csproj" />
   </ItemGroup>
 
