@@ -186,3 +186,15 @@ public sealed record ApiKeySummary
     [JsonPropertyName("expiresAt")]
     public DateTimeOffset? ExpiresAt { get; init; }
 }
+
+/// <summary>
+/// Response from the health check endpoint.
+/// </summary>
+public sealed record HealthResponse
+{
+    [JsonPropertyName("status")]
+    public required string Status { get; init; }
+
+    [JsonPropertyName("timestamp")]
+    public required DateTimeOffset Timestamp { get; init; }
+}

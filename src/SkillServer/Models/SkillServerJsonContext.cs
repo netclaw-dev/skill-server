@@ -26,6 +26,7 @@ namespace SkillServer.Models;
 [JsonSerializable(typeof(IReadOnlyList<ApiKeySummary>))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateRequestItem>))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateResponseItem>))]
+[JsonSerializable(typeof(HealthResponse))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]

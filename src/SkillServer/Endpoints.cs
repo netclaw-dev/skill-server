@@ -50,7 +50,9 @@ public static class Endpoints
 
     private static void MapHealthEndpoints(this WebApplication app)
     {
-        app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }));
+        app.MapGet("/health", () => Results.Json(
+            new HealthResponse { Status = "healthy", Timestamp = DateTimeOffset.UtcNow },
+            SkillServerJsonContext.Default.HealthResponse));
     }
 
     private static async Task<IResult> ListSkills(
