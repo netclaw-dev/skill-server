@@ -30,6 +30,11 @@ public sealed class SkillServerIntegrationTests
         var response = await _fixture.HttpClient.GetAsync("/health", ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<SkillServer.Models.HealthResponse>(ct);
+        Assert.NotNull(body);
+        Assert.Equal("healthy", body.Status);
+        Assert.True(body.Timestamp > DateTimeOffset.MinValue);
     }
 
     [Fact]
