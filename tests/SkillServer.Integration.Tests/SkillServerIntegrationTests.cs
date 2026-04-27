@@ -571,4 +571,39 @@ public sealed class SkillServerIntegrationTests
         var versions = await _fixture.Client.GetSkillVersionsAsync(skillName, ct);
         Assert.Equal(2, versions.Count);
     }
+
+    [Fact]
+    public async Task SearchSkills_WithPorterStemming_MatchesStemmedTerms()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var prefix = $"stem-{Guid.NewGuid():N}"[..10];
+        var skillName = $"{prefix}-closer";
+
+        var skillContent = $"""
+            ---
+            name: {skillName}
+            description: Helps sales reps close deal opportunities faster
+            ---
+
+            # Stemming Test
+            """;
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(skillName), "name");
+        content.Add(new StringContent("1.0.0"), "version");
+
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(skillContent));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/markdown");
+        content.Add(fileContent, "file", "SKILL.md");
+
+        await _fixture.AuthenticatedHttpClient.PostAsync("/skills", content, ct);
+
+        // "closed deals" should match "close deal" via porter stemming
+        var results = await _fixture.Client.SearchSkillsAsync("closed deals", ct: ct);
+        Assert.Contains(results, s => s.Name == skillName);
+
+        // "closing" should match "close" via stemming
+        results = await _fixture.Client.SearchSkillsAsync("closing", ct: ct);
+        Assert.Contains(results, s => s.Name == skillName);
+    }
 }
