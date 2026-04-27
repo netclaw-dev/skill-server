@@ -20,10 +20,10 @@
   </PropertyGroup>
   <!-- Version Management -->
   <PropertyGroup>
-    <VersionPrefix>0.1.2</VersionPrefix>
+    <VersionPrefix>0.2.0</VersionPrefix>
     <PackageReleaseNotes>**Improvements**
-- Return 409 Conflict for duplicate skill version uploads instead of 400 Bad Request (#41)
-  - Follows NuGet pattern — enables idempotent publish pipelines via --skip-duplicate semantics</PackageReleaseNotes>
+- Add lightweight database migration system — schema changes are now applied automatically via numbered SQL migration files on server startup (#44)
+- Enable FTS5 Porter stemmer for skill search — stemmed queries like "closing" now match skills containing "close deal", improving search relevance (#43)</PackageReleaseNotes>
   </PropertyGroup>
   <!-- Default: non-packable unless explicitly set -->
   <PropertyGroup>

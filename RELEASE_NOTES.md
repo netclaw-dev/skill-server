@@ -1,3 +1,9 @@
+#### 0.2.0 April 27th 2026 ####
+
+**Improvements**
+- Add lightweight database migration system — schema changes are now applied automatically via numbered SQL migration files on server startup (#44)
+- Enable FTS5 Porter stemmer for skill search — stemmed queries like "closing" now match skills containing "close deal", improving search relevance (#43)
+
 #### 0.1.2 April 27th 2026 ####
 
 **Improvements**
