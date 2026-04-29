@@ -1,3 +1,12 @@
+#### 0.2.1 April 29th 2026 ####
+
+**New Features**
+- Add resource file upload support to `POST /skills` — skills can now include arbitrary resource files (e.g. `references/guide.md`, `scripts/setup.sh`) per the AgentSkills.io spec (#52)
+
+**Improvements**
+- Resource upload endpoint now supports any subdirectory per the AgentSkills.io spec — previously restricted to `references/` only; all subdirectories are now accessible with path traversal protection (#53)
+- Fix stream leak on validation failure in resource upload path (#53)
+
 #### 0.2.0 April 27th 2026 ####
 
 **Improvements**

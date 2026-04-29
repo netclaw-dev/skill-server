@@ -20,10 +20,13 @@
   </PropertyGroup>
   <!-- Version Management -->
   <PropertyGroup>
-    <VersionPrefix>0.2.0</VersionPrefix>
-    <PackageReleaseNotes>**Improvements**
-- Add lightweight database migration system — schema changes are now applied automatically via numbered SQL migration files on server startup (#44)
-- Enable FTS5 Porter stemmer for skill search — stemmed queries like "closing" now match skills containing "close deal", improving search relevance (#43)</PackageReleaseNotes>
+    <VersionPrefix>0.2.1</VersionPrefix>
+    <PackageReleaseNotes>**New Features**
+- Add resource file upload support to `POST /skills` — skills can now include arbitrary resource files (e.g. `references/guide.md`, `scripts/setup.sh`) per the AgentSkills.io spec (#52)
+
+**Improvements**
+- Resource upload endpoint now supports any subdirectory per the AgentSkills.io spec — previously restricted to `references/` only; all subdirectories are now accessible with path traversal protection (#53)
+- Fix stream leak on validation failure in resource upload path (#53)</PackageReleaseNotes>
   </PropertyGroup>
   <!-- Default: non-packable unless explicitly set -->
   <PropertyGroup>
