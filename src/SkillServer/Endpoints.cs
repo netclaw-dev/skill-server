@@ -228,43 +228,34 @@ public static class Endpoints
             });
         }
 
-        var referenceFiles = request.Form.Files.GetFiles("references");
-        var hasReferences = referenceFiles.Count > 0;
-
-        if (hasReferences)
+        var resourceFiles = request.Form.Files.GetFiles("resources");
+        var resources = new List<(ResourcePath Path, Stream Content)>();
+        try
         {
-            var resources = new List<(ResourcePath Path, Stream Content)>();
-            foreach (var refFile in referenceFiles)
+            foreach (var resourceFile in resourceFiles)
             {
-                var relativePath = $"references/{refFile.FileName}";
-                if (!ResourcePath.TryCreate(relativePath, out var resourcePath))
+                if (!ResourcePath.TryCreate(resourceFile.FileName, out var resourcePath))
                 {
                     return Results.BadRequest(new ErrorResponse
                     {
                         Error = "invalid_resource_path",
-                        Message = $"Invalid resource path: '{relativePath}'. Must be in references/, scripts/, or assets/ directories."
+                        Message = $"Invalid resource path: '{resourceFile.FileName}'. Must be in references/, scripts/, or assets/ directories."
                     });
                 }
 
-                resources.Add((resourcePath.Value, refFile.OpenReadStream()));
+                resources.Add((resourcePath.Value, resourceFile.OpenReadStream()));
             }
 
             await using var stream = file.OpenReadStream();
             var result = await uploadService.UploadSkillWithResourcesAsync(
                 skillName.Value, skillVersion.Value, stream, resources, category, ct);
 
-            foreach (var (_, content) in resources)
-                await content.DisposeAsync();
-
             return HandleUploadResult(result, configuration);
         }
-        else
+        finally
         {
-            await using var stream = file.OpenReadStream();
-            var result = await uploadService.UploadSkillMdAsync(
-                skillName.Value, skillVersion.Value, stream, category, ct);
-
-            return HandleUploadResult(result, configuration);
+            foreach (var (_, content) in resources)
+                await content.DisposeAsync();
         }
     }
 

@@ -608,7 +608,7 @@ public sealed class SkillServerIntegrationTests
     }
 
     [Fact]
-    public async Task UploadSkillWithReferences_EndToEnd()
+    public async Task UploadSkillWithResources_EndToEnd()
     {
         var ct = TestContext.Current.CancellationToken;
         var skillName = $"ref-test-{Guid.NewGuid():N}"[..20];
@@ -616,10 +616,10 @@ public sealed class SkillServerIntegrationTests
         var skillContent = $"""
             ---
             name: {skillName}
-            description: Testing reference file uploads
+            description: Testing resource file uploads
             ---
 
-            # Reference Upload Test
+            # Resource Upload Test
 
             See references/guide.md for details.
             """;
@@ -636,13 +636,11 @@ public sealed class SkillServerIntegrationTests
             Second section content.
             """;
 
-        var referenceContent2 = """
-            # Patterns
-
-            Common usage patterns for this skill.
+        var scriptContent = """
+            #!/bin/bash
+            echo "setup complete"
             """;
 
-        // Upload skill with two reference files
         using var content = new MultipartFormDataContent();
         content.Add(new StringContent(skillName), "name");
         content.Add(new StringContent("1.0.0"), "version");
@@ -653,25 +651,22 @@ public sealed class SkillServerIntegrationTests
 
         var refFileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(referenceContent));
         refFileContent.Headers.ContentType = new MediaTypeHeaderValue("text/markdown");
-        content.Add(refFileContent, "references", "guide.md");
+        content.Add(refFileContent, "resources", "references/guide.md");
 
-        var refFileContent2 = new ByteArrayContent(Encoding.UTF8.GetBytes(referenceContent2));
-        refFileContent2.Headers.ContentType = new MediaTypeHeaderValue("text/markdown");
-        content.Add(refFileContent2, "references", "patterns.md");
+        var scriptFileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(scriptContent));
+        scriptFileContent.Headers.ContentType = new MediaTypeHeaderValue("application/x-sh");
+        content.Add(scriptFileContent, "resources", "scripts/setup.sh");
 
         var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/skills", content, ct);
         Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
 
-        // Verify the version shows file count (SKILL.md + 2 references)
         var version = await _fixture.Client.GetVersionAsync(skillName, "1.0.0", ct);
         Assert.NotNull(version);
         Assert.Equal(2, version.FileCount);
 
-        // Download SKILL.md
         var downloadedSkill = await _fixture.Client.GetSkillFileAsStringAsync(skillName, "1.0.0", ct: ct);
-        Assert.Contains("# Reference Upload Test", downloadedSkill);
+        Assert.Contains("# Resource Upload Test", downloadedSkill);
 
-        // Download reference files via resource endpoint
         var refResponse = await _fixture.HttpClient.GetAsync(
             $"/skills/{skillName}/1.0.0/references/guide.md", ct);
         Assert.Equal(HttpStatusCode.OK, refResponse.StatusCode);
@@ -679,13 +674,12 @@ public sealed class SkillServerIntegrationTests
         Assert.Contains("# Guide", refBody);
         Assert.Contains("Section One", refBody);
 
-        var refResponse2 = await _fixture.HttpClient.GetAsync(
-            $"/skills/{skillName}/1.0.0/references/patterns.md", ct);
-        Assert.Equal(HttpStatusCode.OK, refResponse2.StatusCode);
-        var refBody2 = await refResponse2.Content.ReadAsStringAsync(ct);
-        Assert.Contains("# Patterns", refBody2);
+        var scriptResponse = await _fixture.HttpClient.GetAsync(
+            $"/skills/{skillName}/1.0.0/scripts/setup.sh", ct);
+        Assert.Equal(HttpStatusCode.OK, scriptResponse.StatusCode);
+        var scriptBody = await scriptResponse.Content.ReadAsStringAsync(ct);
+        Assert.Contains("setup complete", scriptBody);
 
-        // Verify resources appear in RFC index
         var index = await _fixture.Client.GetRfcIndexAsync(ct);
         Assert.NotNull(index);
         var indexSkill = index.Skills.FirstOrDefault(s => s.Name == skillName);
@@ -694,11 +688,11 @@ public sealed class SkillServerIntegrationTests
         Assert.NotNull(resources);
         Assert.Equal(2, resources!.Count);
         Assert.Contains(resources, r => r.Path == "references/guide.md");
-        Assert.Contains(resources, r => r.Path == "references/patterns.md");
+        Assert.Contains(resources, r => r.Path == "scripts/setup.sh");
     }
 
     [Fact]
-    public async Task UploadSkillWithReferences_WithoutReferences_StillWorks()
+    public async Task UploadSkillWithResources_WithoutResources_StillWorks()
     {
         var ct = TestContext.Current.CancellationToken;
         var skillName = $"noref-{Guid.NewGuid():N}"[..20];
@@ -706,10 +700,10 @@ public sealed class SkillServerIntegrationTests
         var skillContent = $"""
             ---
             name: {skillName}
-            description: Testing upload without references still works
+            description: Testing upload without resources still works
             ---
 
-            # No References Test
+            # No Resources Test
             """;
 
         using var content = new MultipartFormDataContent();
@@ -726,5 +720,36 @@ public sealed class SkillServerIntegrationTests
         var version = await _fixture.Client.GetVersionAsync(skillName, "1.0.0", ct);
         Assert.NotNull(version);
         Assert.Equal(0, version.FileCount);
+    }
+
+    [Fact]
+    public async Task UploadSkillWithResources_InvalidPath_ReturnsBadRequest()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var skillName = $"badpath-{Guid.NewGuid():N}"[..20];
+
+        var skillContent = $"""
+            ---
+            name: {skillName}
+            description: Testing invalid resource path rejection
+            ---
+
+            # Bad Path Test
+            """;
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(skillName), "name");
+        content.Add(new StringContent("1.0.0"), "version");
+
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(skillContent));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/markdown");
+        content.Add(fileContent, "file", "SKILL.md");
+
+        var badFile = new ByteArrayContent(Encoding.UTF8.GetBytes("exploit"));
+        badFile.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        content.Add(badFile, "resources", "../etc/passwd");
+
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/skills", content, ct);
+        Assert.Equal(HttpStatusCode.BadRequest, uploadResponse.StatusCode);
     }
 }
