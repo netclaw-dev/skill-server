@@ -144,8 +144,6 @@ public readonly partial record struct Sha256Digest
 /// </summary>
 public readonly record struct ResourcePath
 {
-    private static readonly string[] AllowedPrefixes = ["references/", "scripts/", "assets/"];
-
     public string Value { get; }
 
     private ResourcePath(string value) => Value = value;
@@ -157,15 +155,13 @@ public readonly record struct ResourcePath
         if (string.IsNullOrWhiteSpace(value))
             return false;
 
-        // No path traversal
         if (value.Contains("..") || value.StartsWith('/') || value.StartsWith('\\'))
             return false;
 
-        // Normalize separators
         var normalized = value.Replace('\\', '/');
 
-        // Must be in allowed directories
-        if (!AllowedPrefixes.Any(p => normalized.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+        // Must be in a subdirectory — bare filenames at the root are not resources
+        if (!normalized.Contains('/') || normalized.IndexOf('/') == normalized.Length - 1)
             return false;
 
         result = new ResourcePath(normalized);
@@ -175,7 +171,7 @@ public readonly record struct ResourcePath
     public static ResourcePath Create(string value)
     {
         if (!TryCreate(value, out var result))
-            throw new ArgumentException($"Invalid resource path: '{value}'. Must be in references/, scripts/, or assets/ directories with no path traversal.", nameof(value));
+            throw new ArgumentException($"Invalid resource path: '{value}'. Must be a relative path in a subdirectory with no path traversal.", nameof(value));
         return result.Value;
     }
 

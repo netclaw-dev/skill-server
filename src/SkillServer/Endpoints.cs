@@ -239,7 +239,7 @@ public static class Endpoints
                     return Results.BadRequest(new ErrorResponse
                     {
                         Error = "invalid_resource_path",
-                        Message = $"Invalid resource path: '{resourceFile.FileName}'. Must be in references/, scripts/, or assets/ directories."
+                        Message = $"Invalid resource path: '{resourceFile.FileName}'. Must be a relative path in a subdirectory with no path traversal."
                     });
                 }
 

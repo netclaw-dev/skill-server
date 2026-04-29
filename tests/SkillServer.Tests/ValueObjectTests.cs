@@ -115,10 +115,12 @@ public sealed class ResourcePathTests
     [InlineData("scripts/setup.sh", true)]
     [InlineData("assets/logo.png", true)]
     [InlineData("references/deep/nested/file.md", true)]
+    [InlineData("custom/file.txt", true)]
+    [InlineData("examples/demo.py", true)]
     [InlineData("../secret.txt", false)]
     [InlineData("/etc/passwd", false)]
-    [InlineData("SKILL.md", false)] // Must be in allowed directories
-    [InlineData("random/file.txt", false)]
+    [InlineData("SKILL.md", false)] // Bare filenames are not resources
+    [InlineData("justadirectory/", false)]
     [InlineData("", false)]
     public void TryCreate_ValidatesCorrectly(string input, bool expectedValid)
     {
