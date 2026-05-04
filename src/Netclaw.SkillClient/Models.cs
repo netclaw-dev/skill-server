@@ -233,4 +233,4 @@ public sealed record ErrorResponse
 [JsonSerializable(typeof(CreateApiKeyRequest))]
 [JsonSerializable(typeof(ErrorResponse))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-public partial class SkillServerClientJsonContext : JsonSerializerContext;
+public sealed partial class SkillServerClientJsonContext : JsonSerializerContext;

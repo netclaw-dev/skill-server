@@ -17,7 +17,7 @@ internal sealed record ScannedSkill(
     string SkillMdPath,
     IReadOnlyList<ScannedResource> Resources);
 
-internal sealed record ScannedResource(string RelativePath, string AbsolutePath);
+internal readonly record struct ScannedResource(string RelativePath, string AbsolutePath);
 
 internal static partial class SkillDirectoryScanner
 {

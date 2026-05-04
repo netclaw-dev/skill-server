@@ -58,7 +58,7 @@ internal sealed class ConfigResolver
     }
 }
 
-internal sealed record ResolvedConfig(string? ServerUrl, string? ApiKey)
+internal readonly record struct ResolvedConfig(string? ServerUrl, string? ApiKey)
 {
     public bool HasServerUrl => !string.IsNullOrWhiteSpace(ServerUrl);
     public bool HasApiKey => !string.IsNullOrWhiteSpace(ApiKey);

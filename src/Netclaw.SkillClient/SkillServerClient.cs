@@ -3,6 +3,7 @@
 //      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
+using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -203,17 +204,31 @@ public sealed class SkillServerClient : IDisposable
         IReadOnlyList<(string RelativePath, Stream Content)> resources,
         string? category = null, CancellationToken ct = default)
     {
-        using var response = await TryUploadSkillWithResourcesAsync(
-            name, version, skillMdContent, resources, category, ct);
+        using var response = await PostSkillAsync(name, version, skillMdContent, resources, category, ct);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync(
             SkillServerClientJsonContext.Default.SkillUploadResponse, ct))!;
     }
 
-    public async Task<HttpResponseMessage> TryUploadSkillWithResourcesAsync(
+    public async Task<SkillUploadResponse?> UploadSkillIfNotExistsAsync(
         string name, string version, Stream skillMdContent,
         IReadOnlyList<(string RelativePath, Stream Content)> resources,
         string? category = null, CancellationToken ct = default)
+    {
+        using var response = await PostSkillAsync(name, version, skillMdContent, resources, category, ct);
+
+        if (response.StatusCode == HttpStatusCode.Conflict)
+            return null;
+
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync(
+            SkillServerClientJsonContext.Default.SkillUploadResponse, ct))!;
+    }
+
+    private async Task<HttpResponseMessage> PostSkillAsync(
+        string name, string version, Stream skillMdContent,
+        IReadOnlyList<(string RelativePath, Stream Content)> resources,
+        string? category, CancellationToken ct)
     {
         using var content = new MultipartFormDataContent();
         content.Add(new StringContent(name), "name");

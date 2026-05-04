@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Net;
-using System.Net.Http.Json;
 using Netclaw.SkillClient;
 using Netclaw.SkillServer.Cli.Output;
 
@@ -18,7 +17,7 @@ internal enum PublishOutcome
     Failed
 }
 
-internal sealed record PublishOptions(
+internal readonly record struct PublishOptions(
     string? VersionOverride = null,
     bool Force = false,
     bool DryRun = false,
@@ -86,19 +85,14 @@ internal sealed class PublishOrchestrator
                     ConsoleOutput.WriteDim($"  Uploading {relativePath} ({FormatSize(stream.Length)})");
             }
 
-            using var response = await _client.TryUploadSkillWithResourcesAsync(
+            var uploadResponse = await _client.UploadSkillIfNotExistsAsync(
                 skill.Name, version, skillMdStream, resources, skill.Category, ct);
 
-            if (response.StatusCode == HttpStatusCode.Conflict)
+            if (uploadResponse is null)
             {
                 return new PublishResult(skill.Name, version, PublishOutcome.Skipped,
                     "Already published");
             }
-
-            response.EnsureSuccessStatusCode();
-
-            var uploadResponse = await response.Content.ReadFromJsonAsync(
-                SkillServerClientJsonContext.Default.SkillUploadResponse, ct);
 
             return new PublishResult(skill.Name, version, PublishOutcome.Published,
                 Response: uploadResponse);
