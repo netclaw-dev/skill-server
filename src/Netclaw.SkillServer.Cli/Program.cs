@@ -35,36 +35,20 @@ if (parsedArgs.Command == "")
     return 1;
 }
 
-// Config command doesn't need a server connection
 if (parsedArgs.Command == "config")
     return await ConfigCommand.ExecuteAsync(parsedArgs);
 
-// --help on subcommands should work without auth
+// --help on subcommands works without auth
 if (parsedArgs.Help)
 {
     using var helpClient = new SkillServerClient("http://placeholder");
-    return parsedArgs.Command switch
-    {
-        "publish" => await PublishCommand.ExecuteAsync(parsedArgs, helpClient),
-        "publish-all" => await PublishAllCommand.ExecuteAsync(parsedArgs, helpClient),
-        "delete" => await DeleteCommand.ExecuteAsync(parsedArgs, helpClient),
-        "list" => await ListCommand.ExecuteAsync(parsedArgs, helpClient),
-        "versions" => await VersionsCommand.ExecuteAsync(parsedArgs, helpClient),
-        "verify" => await VerifyCommand.ExecuteAsync(parsedArgs, helpClient),
-        "api-key" => await ApiKeyCommand.ExecuteAsync(parsedArgs, helpClient),
-        _ => UnknownCommand(parsedArgs.Command)
-    };
+    return await DispatchAsync(parsedArgs, helpClient);
 }
 
-// All other commands need resolved config
 var resolver = new ConfigResolver();
 var config = resolver.Resolve(parsedArgs.ServerUrl, parsedArgs.ApiKey);
 
-// Read-only commands that don't require auth
-var readOnlyCommands = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    { "list", "versions", "verify" };
-
-var requiresAuth = !readOnlyCommands.Contains(parsedArgs.Command);
+var requiresAuth = parsedArgs.Command is not "list" and not "versions" and not "verify";
 
 if (!config.HasServerUrl)
 {
@@ -81,18 +65,20 @@ if (requiresAuth && !config.HasApiKey)
 }
 
 using var client = new SkillServerClient(config.ServerUrl!, config.ApiKey);
+return await DispatchAsync(parsedArgs, client);
 
-return parsedArgs.Command switch
-{
-    "publish" => await PublishCommand.ExecuteAsync(parsedArgs, client),
-    "publish-all" => await PublishAllCommand.ExecuteAsync(parsedArgs, client),
-    "delete" => await DeleteCommand.ExecuteAsync(parsedArgs, client),
-    "list" => await ListCommand.ExecuteAsync(parsedArgs, client),
-    "versions" => await VersionsCommand.ExecuteAsync(parsedArgs, client),
-    "verify" => await VerifyCommand.ExecuteAsync(parsedArgs, client),
-    "api-key" => await ApiKeyCommand.ExecuteAsync(parsedArgs, client),
-    _ => UnknownCommand(parsedArgs.Command)
-};
+static async Task<int> DispatchAsync(ParsedArgs parsedArgs, SkillServerClient client) =>
+    parsedArgs.Command switch
+    {
+        "publish" => await PublishCommand.ExecuteAsync(parsedArgs, client),
+        "publish-all" => await PublishAllCommand.ExecuteAsync(parsedArgs, client),
+        "delete" => await DeleteCommand.ExecuteAsync(parsedArgs, client),
+        "list" => await ListCommand.ExecuteAsync(parsedArgs, client),
+        "versions" => await VersionsCommand.ExecuteAsync(parsedArgs, client),
+        "verify" => await VerifyCommand.ExecuteAsync(parsedArgs, client),
+        "api-key" => await ApiKeyCommand.ExecuteAsync(parsedArgs, client),
+        _ => UnknownCommand(parsedArgs.Command)
+    };
 
 static int UnknownCommand(string command)
 {

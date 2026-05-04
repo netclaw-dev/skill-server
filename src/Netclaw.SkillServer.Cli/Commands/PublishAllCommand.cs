@@ -10,7 +10,7 @@ using Netclaw.SkillServer.Cli.Publishing;
 
 namespace Netclaw.SkillServer.Cli.Commands;
 
-public static class PublishAllCommand
+internal static class PublishAllCommand
 {
     public static async Task<int> ExecuteAsync(ParsedArgs args, SkillServerClient client)
     {
@@ -33,26 +33,13 @@ public static class PublishAllCommand
         ConsoleOutput.WriteInfo($"Found {skills.Count} skill(s) to publish.");
         Console.WriteLine();
 
-        if (args.DryRun)
-        {
-            foreach (var skill in skills)
-            {
-                var resourceInfo = skill.Resources.Count > 0
-                    ? $"SKILL.md + {skill.Resources.Count} resources"
-                    : "SKILL.md only";
-                ConsoleOutput.WriteInfo($"  {skill.Name}@{skill.Version} ({resourceInfo})");
-            }
-
-            return 0;
-        }
-
+        var options = new PublishOptions(Force: args.Force, DryRun: args.DryRun, Verbose: args.Verbose);
         var orchestrator = new PublishOrchestrator(client);
         int published = 0, skipped = 0, failed = 0;
 
         foreach (var skill in skills)
         {
-            var result = await orchestrator.PublishAsync(
-                skill, force: args.Force, verbose: args.Verbose);
+            var result = await orchestrator.PublishAsync(skill, options);
 
             switch (result.Outcome)
             {

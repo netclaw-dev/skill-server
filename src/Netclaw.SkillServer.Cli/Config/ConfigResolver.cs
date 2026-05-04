@@ -10,7 +10,7 @@ using Netclaw.SkillServer.Cli.Json;
 
 namespace Netclaw.SkillServer.Cli.Config;
 
-public sealed class ConfigResolver
+internal sealed class ConfigResolver
 {
     public static readonly string ConfigDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -58,7 +58,7 @@ public sealed class ConfigResolver
     }
 }
 
-public sealed record ResolvedConfig(string? ServerUrl, string? ApiKey)
+internal sealed record ResolvedConfig(string? ServerUrl, string? ApiKey)
 {
     public bool HasServerUrl => !string.IsNullOrWhiteSpace(ServerUrl);
     public bool HasApiKey => !string.IsNullOrWhiteSpace(ApiKey);

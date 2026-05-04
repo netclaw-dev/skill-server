@@ -9,7 +9,7 @@ using Netclaw.SkillServer.Cli.Output;
 
 namespace Netclaw.SkillServer.Cli.Commands;
 
-public static class DeleteCommand
+internal static class DeleteCommand
 {
     public static async Task<int> ExecuteAsync(ParsedArgs args, SkillServerClient client)
     {

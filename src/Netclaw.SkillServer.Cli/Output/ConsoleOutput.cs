@@ -6,7 +6,7 @@
 
 namespace Netclaw.SkillServer.Cli.Output;
 
-public static class ConsoleOutput
+internal static class ConsoleOutput
 {
     private static bool IsTty => !Console.IsOutputRedirected;
 

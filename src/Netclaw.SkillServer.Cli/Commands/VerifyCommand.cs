@@ -11,7 +11,7 @@ using Netclaw.SkillServer.Cli.Publishing;
 
 namespace Netclaw.SkillServer.Cli.Commands;
 
-public static class VerifyCommand
+internal static class VerifyCommand
 {
     public static async Task<int> ExecuteAsync(ParsedArgs args, SkillServerClient client)
     {

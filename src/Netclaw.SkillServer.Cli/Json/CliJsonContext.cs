@@ -19,4 +19,4 @@ namespace Netclaw.SkillServer.Cli.Json;
 [JsonSourceGenerationOptions(
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-public sealed partial class CliJsonContext : JsonSerializerContext;
+internal sealed partial class CliJsonContext : JsonSerializerContext;

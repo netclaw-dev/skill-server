@@ -203,17 +203,8 @@ public sealed class SkillServerClient : IDisposable
         IReadOnlyList<(string RelativePath, Stream Content)> resources,
         string? category = null, CancellationToken ct = default)
     {
-        using var content = new MultipartFormDataContent();
-        content.Add(new StringContent(name), "name");
-        content.Add(new StringContent(version), "version");
-        if (category is not null)
-            content.Add(new StringContent(category), "category");
-        content.Add(new StreamContent(skillMdContent), "file", "SKILL.md");
-
-        foreach (var (relativePath, resourceStream) in resources)
-            content.Add(new StreamContent(resourceStream), "resources", relativePath);
-
-        var response = await _httpClient.PostAsync("skills", content, ct);
+        using var response = await TryUploadSkillWithResourcesAsync(
+            name, version, skillMdContent, resources, category, ct);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync(
             SkillServerClientJsonContext.Default.SkillUploadResponse, ct))!;

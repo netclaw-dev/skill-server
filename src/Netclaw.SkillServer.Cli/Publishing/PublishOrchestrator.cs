@@ -11,21 +11,27 @@ using Netclaw.SkillServer.Cli.Output;
 
 namespace Netclaw.SkillServer.Cli.Publishing;
 
-public enum PublishOutcome
+internal enum PublishOutcome
 {
     Published,
     Skipped,
     Failed
 }
 
-public sealed record PublishResult(
+internal sealed record PublishOptions(
+    string? VersionOverride = null,
+    bool Force = false,
+    bool DryRun = false,
+    bool Verbose = false);
+
+internal sealed record PublishResult(
     string Name,
     string Version,
     PublishOutcome Outcome,
     string? Message = null,
     SkillUploadResponse? Response = null);
 
-public sealed class PublishOrchestrator
+internal sealed class PublishOrchestrator
 {
     private readonly SkillServerClient _client;
 
@@ -36,34 +42,28 @@ public sealed class PublishOrchestrator
 
     public async Task<PublishResult> PublishAsync(
         ScannedSkill skill,
-        string? versionOverride = null,
-        bool force = false,
-        bool dryRun = false,
-        bool verbose = false,
+        PublishOptions options,
         CancellationToken ct = default)
     {
-        var version = versionOverride ?? skill.Version;
+        var version = options.VersionOverride ?? skill.Version;
 
-        if (dryRun)
+        if (options.DryRun)
         {
-            var resourceInfo = skill.Resources.Count > 0
-                ? $"SKILL.md + {skill.Resources.Count} resources"
-                : "SKILL.md only";
             return new PublishResult(skill.Name, version, PublishOutcome.Skipped,
-                $"Would publish ({resourceInfo})");
+                $"Would publish ({FormatResourceInfo(skill)})");
         }
 
-        if (force)
+        if (options.Force)
         {
             try
             {
                 await _client.DeleteVersionAsync(skill.Name, version, ct);
-                if (verbose)
+                if (options.Verbose)
                     ConsoleOutput.WriteDim($"  Deleted existing {skill.Name}@{version}");
             }
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
-                if (verbose)
+                if (options.Verbose)
                     ConsoleOutput.WriteDim($"  No existing version to delete for {skill.Name}@{version}");
             }
         }
@@ -79,18 +79,14 @@ public sealed class PublishOrchestrator
                 resources.Add((resource.RelativePath, File.OpenRead(resource.AbsolutePath)));
             }
 
-            if (verbose)
+            if (options.Verbose)
             {
-                var fileSize = new FileInfo(skill.SkillMdPath).Length;
-                ConsoleOutput.WriteDim($"  Uploading SKILL.md ({FormatSize(fileSize)})");
-                foreach (var resource in skill.Resources)
-                {
-                    var size = new FileInfo(resource.AbsolutePath).Length;
-                    ConsoleOutput.WriteDim($"  Uploading {resource.RelativePath} ({FormatSize(size)})");
-                }
+                ConsoleOutput.WriteDim($"  Uploading SKILL.md ({FormatSize(skillMdStream.Length)})");
+                foreach (var (relativePath, stream) in resources)
+                    ConsoleOutput.WriteDim($"  Uploading {relativePath} ({FormatSize(stream.Length)})");
             }
 
-            var response = await _client.TryUploadSkillWithResourcesAsync(
+            using var response = await _client.TryUploadSkillWithResourcesAsync(
                 skill.Name, version, skillMdStream, resources, skill.Category, ct);
 
             if (response.StatusCode == HttpStatusCode.Conflict)
@@ -120,6 +116,11 @@ public sealed class PublishOrchestrator
                 await stream.DisposeAsync();
         }
     }
+
+    internal static string FormatResourceInfo(ScannedSkill skill) =>
+        skill.Resources.Count > 0
+            ? $"SKILL.md + {skill.Resources.Count} resources"
+            : "SKILL.md only";
 
     private static string FormatSize(long bytes) => bytes switch
     {

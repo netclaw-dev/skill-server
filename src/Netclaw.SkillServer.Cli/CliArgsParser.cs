@@ -6,7 +6,7 @@
 
 namespace Netclaw.SkillServer.Cli;
 
-public sealed class ParsedArgs
+internal sealed class ParsedArgs
 {
     public string Command { get; init; } = "";
     public string SubCommand { get; init; } = "";
@@ -30,7 +30,7 @@ public sealed class ParsedArgs
     public string? Value { get; init; }
 }
 
-public static class CliArgsParser
+internal static class CliArgsParser
 {
     public static ParsedArgs Parse(string[] args)
     {
@@ -55,7 +55,6 @@ public static class CliArgsParser
                 {
                     command = arg.ToLowerInvariant();
 
-                    // Two-word commands
                     if (command is "api-key" or "config" or "publish-all")
                     {
                         if (command is "api-key" or "config" && i + 1 < args.Length && !args[i + 1].StartsWith('-'))

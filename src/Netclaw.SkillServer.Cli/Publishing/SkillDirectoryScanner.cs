@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 namespace Netclaw.SkillServer.Cli.Publishing;
 
-public sealed record ScannedSkill(
+internal sealed record ScannedSkill(
     string DirectoryPath,
     string Name,
     string Version,
@@ -17,9 +17,9 @@ public sealed record ScannedSkill(
     string SkillMdPath,
     IReadOnlyList<ScannedResource> Resources);
 
-public sealed record ScannedResource(string RelativePath, string AbsolutePath);
+internal sealed record ScannedResource(string RelativePath, string AbsolutePath);
 
-public static partial class SkillDirectoryScanner
+internal static partial class SkillDirectoryScanner
 {
     [GeneratedRegex(@"^---\s*\n(.*?)\n---", RegexOptions.Singleline)]
     private static partial Regex FrontmatterRegex();

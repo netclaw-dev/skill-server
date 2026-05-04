@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 
 namespace Netclaw.SkillServer.Cli.Config;
 
-public sealed class CliConfig
+internal sealed class CliConfig
 {
     [JsonPropertyName("configVersion")]
     public int ConfigVersion { get; set; } = 1;
