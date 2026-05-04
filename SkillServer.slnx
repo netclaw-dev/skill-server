@@ -9,11 +9,13 @@
   <Folder Name="/src/">
     <Project Path="src/SkillServer/SkillServer.csproj" />
     <Project Path="src/Netclaw.SkillClient/Netclaw.SkillClient.csproj" />
+    <Project Path="src/Netclaw.SkillServer.Cli/Netclaw.SkillServer.Cli.csproj" />
     <Project Path="src/SkillServer.AppHost/SkillServer.AppHost.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SkillServer.Tests/SkillServer.Tests.csproj" />
     <Project Path="tests/SkillServer.Integration.Tests/SkillServer.Integration.Tests.csproj" />
+    <Project Path="tests/Netclaw.SkillServer.Cli.Tests/Netclaw.SkillServer.Cli.Tests.csproj" />
   </Folder>
   <Folder Name="/docker/">
     <File Path="docker/docker-compose.yml" />

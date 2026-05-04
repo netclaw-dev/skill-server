@@ -195,6 +195,14 @@ public sealed class SkillServerClient : IDisposable
         string name, string version, Stream skillMdContent, string? category = null,
         CancellationToken ct = default)
     {
+        return await UploadSkillWithResourcesAsync(name, version, skillMdContent, [], category, ct);
+    }
+
+    public async Task<SkillUploadResponse> UploadSkillWithResourcesAsync(
+        string name, string version, Stream skillMdContent,
+        IReadOnlyList<(string RelativePath, Stream Content)> resources,
+        string? category = null, CancellationToken ct = default)
+    {
         using var content = new MultipartFormDataContent();
         content.Add(new StringContent(name), "name");
         content.Add(new StringContent(version), "version");
@@ -202,16 +210,61 @@ public sealed class SkillServerClient : IDisposable
             content.Add(new StringContent(category), "category");
         content.Add(new StreamContent(skillMdContent), "file", "SKILL.md");
 
+        foreach (var (relativePath, resourceStream) in resources)
+            content.Add(new StreamContent(resourceStream), "resources", relativePath);
+
         var response = await _httpClient.PostAsync("skills", content, ct);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync(
             SkillServerClientJsonContext.Default.SkillUploadResponse, ct))!;
     }
 
+    public async Task<HttpResponseMessage> TryUploadSkillWithResourcesAsync(
+        string name, string version, Stream skillMdContent,
+        IReadOnlyList<(string RelativePath, Stream Content)> resources,
+        string? category = null, CancellationToken ct = default)
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(name), "name");
+        content.Add(new StringContent(version), "version");
+        if (category is not null)
+            content.Add(new StringContent(category), "category");
+        content.Add(new StreamContent(skillMdContent), "file", "SKILL.md");
+
+        foreach (var (relativePath, resourceStream) in resources)
+            content.Add(new StreamContent(resourceStream), "resources", relativePath);
+
+        return await _httpClient.PostAsync("skills", content, ct);
+    }
+
     public async Task DeleteVersionAsync(string name, string version, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync(
             $"skills/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}", ct);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<CreateApiKeyResponse> CreateApiKeyAsync(
+        string label, DateTimeOffset? expiresAt = null, CancellationToken ct = default)
+    {
+        var request = new CreateApiKeyRequest { Label = label, ExpiresAt = expiresAt };
+        var response = await _httpClient.PostAsJsonAsync("api-keys",
+            request, SkillServerClientJsonContext.Default.CreateApiKeyRequest, ct);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync(
+            SkillServerClientJsonContext.Default.CreateApiKeyResponse, ct))!;
+    }
+
+    public async Task<IReadOnlyList<ApiKeySummary>> ListApiKeysAsync(CancellationToken ct = default)
+    {
+        var result = await _httpClient.GetFromJsonAsync("api-keys",
+            SkillServerClientJsonContext.Default.IReadOnlyListApiKeySummary, ct);
+        return result ?? [];
+    }
+
+    public async Task DeleteApiKeyAsync(long id, CancellationToken ct = default)
+    {
+        var response = await _httpClient.DeleteAsync($"api-keys/{id}", ct);
         response.EnsureSuccessStatusCode();
     }
 

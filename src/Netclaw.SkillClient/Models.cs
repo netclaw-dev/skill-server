@@ -199,6 +199,24 @@ public sealed record ApiKeySummary
     public DateTimeOffset? ExpiresAt { get; init; }
 }
 
+public sealed record CreateApiKeyRequest
+{
+    [JsonPropertyName("label")]
+    public required string Label { get; init; }
+
+    [JsonPropertyName("expiresAt")]
+    public DateTimeOffset? ExpiresAt { get; init; }
+}
+
+public sealed record ErrorResponse
+{
+    [JsonPropertyName("error")]
+    public string Error { get; init; } = "";
+
+    [JsonPropertyName("message")]
+    public string Message { get; init; } = "";
+}
+
 /// <summary>
 /// JSON serialization context for AOT support.
 /// </summary>
@@ -212,5 +230,7 @@ public sealed record ApiKeySummary
 [JsonSerializable(typeof(IReadOnlyList<ApiKeySummary>))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateRequest>))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateResponse>))]
+[JsonSerializable(typeof(CreateApiKeyRequest))]
+[JsonSerializable(typeof(ErrorResponse))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 public partial class SkillServerClientJsonContext : JsonSerializerContext;
