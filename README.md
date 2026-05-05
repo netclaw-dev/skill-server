@@ -1,6 +1,7 @@
 # SkillServer
 
-[![NuGet](https://img.shields.io/nuget/v/Netclaw.SkillClient)](https://www.nuget.org/packages/Netclaw.SkillClient)
+[![NuGet - Client](https://img.shields.io/nuget/v/Netclaw.SkillClient?label=Netclaw.SkillClient)](https://www.nuget.org/packages/Netclaw.SkillClient)
+[![NuGet - CLI](https://img.shields.io/nuget/v/Netclaw.SkillServer.Cli?label=skillserver%20CLI)](https://www.nuget.org/packages/Netclaw.SkillServer.Cli)
 [![GitHub Container](https://ghcr-badge.egpl.dev/netclaw-dev/skillserver/latest_tag?label=container)](https://ghcr.io/netclaw-dev/skillserver)
 
 A self-hosted skill server for managing AI agent skills internally within organizations. Similar to self-hosted package registries (BaGet for NuGet, Verdaccio for npm, Docker Registry), SkillServer enables companies to:
@@ -9,6 +10,14 @@ A self-hosted skill server for managing AI agent skills internally within organi
 - Control skill discovery and distribution
 - Version skills with full history
 - Integrate with NetClaw CLI and other AgentSkills.io-compatible agents
+
+This repository contains three components:
+
+| Component | Description | Install |
+|-----------|-------------|---------|
+| **SkillServer** | Self-hosted skill registry (web server) | `docker pull ghcr.io/netclaw-dev/skillserver` |
+| **skillserver CLI** | Command-line tool for publishing and managing skills | `dotnet tool install -g Netclaw.SkillServer.Cli` |
+| **Netclaw.SkillClient** | Typed .NET client library | `dotnet add package Netclaw.SkillClient` |
 
 ## Standards Support
 
@@ -90,18 +99,42 @@ Configuration is via environment variables or `appsettings.json`:
 |----------|-------------|
 | `GET /health` | Health check |
 
-## Uploading Skills
+## CLI Tool
 
-Upload a SKILL.md file:
+The `skillserver` CLI is the recommended way to publish and manage skills.
+
+### Install
 
 ```bash
-curl -X POST http://localhost:8080/skills \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -F "name=my-skill" \
-  -F "version=1.0.0" \
-  -F "category=internal" \
-  -F "file=@SKILL.md"
+# .NET global tool
+dotnet tool install --global Netclaw.SkillServer.Cli
+
+# Or standalone binary (Linux/macOS)
+curl -fsSL https://raw.githubusercontent.com/netclaw-dev/skill-server/dev/scripts/install-skillserver.sh | bash
+
+# Or standalone binary (Windows PowerShell)
+iwr -useb https://raw.githubusercontent.com/netclaw-dev/skill-server/dev/scripts/install-skillserver.ps1 | iex
 ```
+
+### Usage
+
+```bash
+# Configure
+skillserver config init
+
+# Publish a skill
+skillserver publish ./my-skill
+
+# Batch publish
+skillserver publish-all ./skills
+
+# List, search, verify, delete
+skillserver list --search kubernetes
+skillserver verify ./my-skill
+skillserver delete my-skill 1.0.0 --yes
+```
+
+See the [CLI README](src/Netclaw.SkillServer.Cli/README.md) for the full command reference.
 
 ## Client Library
 

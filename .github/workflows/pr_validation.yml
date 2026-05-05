@@ -98,6 +98,74 @@ jobs:
       - name: "slopwatch analyze"
         run: dotnet slopwatch analyze
 
+  script-lint:
+    name: Script Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: "ShellCheck (bash)"
+        run: shellcheck scripts/install-skillserver.sh
+
+      - name: "Syntax check (PowerShell)"
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.PSParser]::Tokenize(
+            (Get-Content -Raw scripts/install-skillserver.ps1), [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "PowerShell syntax OK"
+
+  cli-publish:
+    name: CLI Publish Dry Run
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: "Install .NET SDK"
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7
+        with:
+          global-json-file: "./global.json"
+
+      - name: "Publish CLI (trimmed, linux-x64)"
+        run: |
+          dotnet publish src/Netclaw.SkillServer.Cli/Netclaw.SkillServer.Cli.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained \
+            /p:PublishSingleFile=true \
+            /p:TrimmerSingleWarn=false \
+            -o ./publish/linux-x64
+
+      - name: "Check trim warnings"
+        run: |
+          dotnet publish src/Netclaw.SkillServer.Cli/Netclaw.SkillServer.Cli.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained \
+            /p:PublishSingleFile=true \
+            /p:TrimmerSingleWarn=false \
+            /p:TreatWarningsAsErrors=true \
+            /warnAsError:IL2026 /warnAsError:IL2057 \
+            /warnAsError:IL2067 /warnAsError:IL2075 \
+            /warnAsError:IL2096 /warnAsError:IL3050
+
+      - name: "Smoke test"
+        run: |
+          ./publish/linux-x64/skillserver --version
+          ./publish/linux-x64/skillserver --help
+
   docker:
     name: Docker Build
     runs-on: ubuntu-latest

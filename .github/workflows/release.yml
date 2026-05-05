@@ -1,0 +1,280 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+env:
+  CONTAINER_REGISTRY: ghcr.io
+  CONTAINER_IMAGE: ${{ github.repository_owner }}/skillserver
+
+jobs:
+  # ─── Stage 1: Build everything in parallel ───────────────────────────
+
+  nuget-pack:
+    name: NuGet Pack
+    runs-on: ubuntu-latest
+    environment: nuget
+
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        lfs: true
+        fetch-depth: 0
+
+    - name: "Install .NET SDK"
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7
+      with:
+        global-json-file: "./global.json"
+
+    - name: "Restore .NET tools"
+      run: dotnet tool restore
+
+    - name: "Update release notes"
+      shell: pwsh
+      run: ./build.ps1
+
+    - name: "Pack"
+      run: dotnet pack /p:PackageVersion=${{ github.ref_name }} -c Release -o ./output
+
+    - name: "Upload artifacts"
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: nuget-packages
+        path: |
+          output/*.nupkg
+          output/*.snupkg
+        retention-days: 7
+
+  cli-binaries:
+    name: CLI-${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            os: ubuntu-latest
+            archive: tar
+          - rid: linux-arm64
+            os: ubuntu-latest
+            archive: tar
+          - rid: osx-arm64
+            os: macos-latest
+            archive: tar
+          - rid: win-x64
+            os: windows-latest
+            archive: zip
+
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        lfs: true
+        fetch-depth: 0
+
+    - name: "Install .NET SDK"
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7
+      with:
+        global-json-file: "./global.json"
+
+    - name: "Restore .NET tools"
+      run: dotnet tool restore
+
+    - name: "Update release notes"
+      shell: pwsh
+      run: ./build.ps1
+
+    - name: "Set version"
+      shell: bash
+      run: |
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        ASSEMBLY_VERSION=$(echo $VERSION | cut -d'-' -f1)
+        echo "ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_ENV
+
+    - name: "Publish CLI"
+      shell: bash
+      run: |
+        dotnet publish src/Netclaw.SkillServer.Cli/Netclaw.SkillServer.Cli.csproj \
+          -c Release \
+          -r ${{ matrix.rid }} \
+          --self-contained \
+          /p:PublishSingleFile=true \
+          /p:Version=${{ env.VERSION }} \
+          /p:AssemblyVersion=${{ env.ASSEMBLY_VERSION }} \
+          /p:FileVersion=${{ env.ASSEMBLY_VERSION }} \
+          -o ./publish
+
+    - name: "Smoke test"
+      if: matrix.rid != 'linux-arm64'
+      shell: bash
+      run: |
+        if [[ "${{ matrix.rid }}" == win-* ]]; then
+          ./publish/skillserver.exe --version
+          ./publish/skillserver.exe --help
+        else
+          ./publish/skillserver --version
+          ./publish/skillserver --help
+        fi
+
+    - name: "Package (tar.gz)"
+      if: matrix.archive == 'tar'
+      shell: bash
+      run: |
+        cd publish
+        tar -czf ../skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz *
+        cd ..
+        sha256sum skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz \
+          > skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz.sha256
+
+    - name: "Package (zip)"
+      if: matrix.archive == 'zip'
+      shell: pwsh
+      run: |
+        Compress-Archive -Path publish/* -DestinationPath skillserver-${{ env.VERSION }}-${{ matrix.rid }}.zip
+        $hash = (Get-FileHash -Algorithm SHA256 skillserver-${{ env.VERSION }}-${{ matrix.rid }}.zip).Hash.ToLower()
+        "$hash  skillserver-${{ env.VERSION }}-${{ matrix.rid }}.zip" | Set-Content skillserver-${{ env.VERSION }}-${{ matrix.rid }}.zip.sha256
+
+    - name: "Upload artifacts"
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: cli-${{ matrix.rid }}
+        path: |
+          skillserver-${{ env.VERSION }}-${{ matrix.rid }}.*
+        retention-days: 7
+
+  container-images:
+    name: Container-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            rid: linux-x64
+          - arch: arm64
+            rid: linux-arm64
+
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        lfs: true
+        fetch-depth: 0
+
+    - name: "Install .NET SDK"
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7
+      with:
+        global-json-file: "./global.json"
+
+    - name: "Login to GitHub Container Registry"
+      uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
+      with:
+        registry: ${{ env.CONTAINER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: "Build and Push Container"
+      run: |
+        dotnet publish src/SkillServer/SkillServer.csproj \
+          -c Release \
+          /t:PublishContainer \
+          /p:ContainerRegistry=${{ env.CONTAINER_REGISTRY }} \
+          /p:ContainerRepository=${{ env.CONTAINER_IMAGE }} \
+          /p:ContainerRuntimeIdentifier=${{ matrix.rid }} \
+          /p:ContainerImageTags='"${{ github.ref_name }}-${{ matrix.arch }}"'
+
+  # ─── Stage 2: Publish everything once all builds succeed ─────────────
+
+  publish-release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: [nuget-pack, cli-binaries, container-images]
+    environment: nuget
+
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        fetch-depth: 0
+
+    - name: "Install .NET SDK"
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7
+      with:
+        global-json-file: "./global.json"
+
+    - name: "Download NuGet packages"
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      with:
+        name: nuget-packages
+        path: ./nuget
+
+    - name: "Download CLI binaries"
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      with:
+        pattern: cli-*
+        merge-multiple: true
+        path: ./cli
+
+    - name: "NuGet login (OIDC)"
+      uses: NuGet/login@v1
+      id: nuget-login
+      with:
+        user: ${{ secrets.NUGET_USER }}
+
+    - name: "Push NuGet packages"
+      run: |
+        dotnet nuget push "nuget/*.nupkg" \
+          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+        dotnet nuget push "nuget/*.snupkg" \
+          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+
+    - name: "Create Docker multi-arch manifest"
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | \
+          docker login ${{ env.CONTAINER_REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+        docker manifest create \
+          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }} \
+          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-x64 \
+          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-arm64
+
+        docker manifest create \
+          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:latest \
+          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-x64 \
+          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-arm64
+
+        docker manifest push ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}
+        docker manifest push ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:latest
+
+    - name: "Extract release notes"
+      shell: pwsh
+      run: |
+        $content = Get-Content RELEASE_NOTES.md -Raw
+        if ($content -match '(?s)(####.+?)(?=\n####|\z)') {
+          $Matches[1].Trim() | Set-Content RELEASE_NOTES_LATEST.md
+        } else {
+          $content | Set-Content RELEASE_NOTES_LATEST.md
+        }
+
+    - name: "Create GitHub Release"
+      run: |
+        gh release create "${{ github.ref_name }}" \
+          --title "SkillServer ${{ github.ref_name }}" \
+          --notes-file RELEASE_NOTES_LATEST.md \
+          nuget/*.nupkg nuget/*.snupkg cli/*
+      env:
+        GH_TOKEN: ${{ github.token }}

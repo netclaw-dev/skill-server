@@ -9,6 +9,7 @@ using Netclaw.SkillClient;
 using Netclaw.SkillServer.Cli;
 using Netclaw.SkillServer.Cli.Commands;
 using Netclaw.SkillServer.Cli.Config;
+using System.Net.Http.Headers;
 using Netclaw.SkillServer.Cli.Output;
 
 var parsedArgs = CliArgsParser.Parse(args);
@@ -64,7 +65,8 @@ if (requiresAuth && !config.HasApiKey)
     return 1;
 }
 
-using var client = new SkillServerClient(config.ServerUrl!, config.ApiKey);
+using var httpClient = CreateHttpClient(config, parsedArgs.Verbose);
+using var client = new SkillServerClient(httpClient);
 return await DispatchAsync(parsedArgs, client);
 
 static async Task<int> DispatchAsync(ParsedArgs parsedArgs, SkillServerClient client) =>
@@ -86,6 +88,24 @@ static int UnknownCommand(string command)
     Console.WriteLine();
     PrintHelp();
     return 1;
+}
+
+static HttpClient CreateHttpClient(ResolvedConfig config, bool verbose)
+{
+    HttpMessageHandler handler = verbose
+        ? new VerboseLoggingHandler()
+        : new HttpClientHandler();
+
+    var client = new HttpClient(handler)
+    {
+        BaseAddress = new Uri(config.ServerUrl!.TrimEnd('/') + "/")
+    };
+
+    if (!string.IsNullOrEmpty(config.ApiKey))
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", config.ApiKey);
+
+    return client;
 }
 
 static void PrintHelp()
