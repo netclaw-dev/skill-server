@@ -8,7 +8,7 @@ namespace Netclaw.SkillServer.Cli.Output;
 
 internal static class ConsoleOutput
 {
-    private static bool IsTty => !Console.IsOutputRedirected;
+    private static readonly bool IsTty = !Console.IsOutputRedirected;
 
     public static void WriteSuccess(string message)
     {
@@ -66,6 +66,12 @@ internal static class ConsoleOutput
             var line = string.Join("  ", row.Select((v, i) => i < widths.Length ? v.PadRight(widths[i]) : v));
             Console.WriteLine(line);
         }
+    }
+
+    public static int HandleHttpError(HttpRequestException ex)
+    {
+        WriteError($"Error: {ex.Message}");
+        return 1;
     }
 
     public static string MaskApiKey(string key)

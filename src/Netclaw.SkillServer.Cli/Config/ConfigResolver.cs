@@ -49,7 +49,6 @@ internal sealed class ConfigResolver
         var json = JsonSerializer.Serialize(config, CliJsonContext.Default.CliConfig);
         File.WriteAllText(ConfigFilePath, json);
 
-        // Set file permissions to owner-only on Unix
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             File.SetUnixFileMode(ConfigFilePath,

@@ -41,8 +41,7 @@ internal static class DeleteCommand
         }
         catch (HttpRequestException ex)
         {
-            ConsoleOutput.WriteError($"Error: {ex.Message}");
-            return 1;
+            return ConsoleOutput.HandleHttpError(ex);
         }
     }
 

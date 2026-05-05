@@ -44,7 +44,6 @@ internal static class VerifyCommand
 
             var allMatch = true;
 
-            // Verify SKILL.md
             var localDigest = await ComputeFileDigestAsync(skill.SkillMdPath);
             var serverDigest = serverVersion.Sha256;
             var match = string.Equals(localDigest, serverDigest, StringComparison.OrdinalIgnoreCase);
@@ -56,26 +55,17 @@ internal static class VerifyCommand
                 allMatch = false;
             }
 
-            // Verify resources by downloading and comparing
-            foreach (var resource in skill.Resources)
-            {
-                try
-                {
-                    var serverContent = await client.GetSkillFileAsStringAsync(
-                        skill.Name, version, resource.RelativePath);
-                    var localContent = await File.ReadAllTextAsync(resource.AbsolutePath);
+            var verifyTasks = skill.Resources.Select(resource =>
+                VerifyResourceAsync(client, skill.Name, version, resource));
+            var results = await Task.WhenAll(verifyTasks);
 
-                    if (localContent == serverContent)
-                        ConsoleOutput.WriteSuccess($"  {resource.RelativePath}    match");
-                    else
-                    {
-                        ConsoleOutput.WriteError($"  {resource.RelativePath}    MISMATCH");
-                        allMatch = false;
-                    }
-                }
-                catch (HttpRequestException)
+            foreach (var (resource, matched) in results)
+            {
+                if (matched)
+                    ConsoleOutput.WriteSuccess($"  {resource}    match");
+                else
                 {
-                    ConsoleOutput.WriteError($"  {resource.RelativePath}    NOT FOUND on server");
+                    ConsoleOutput.WriteError($"  {resource}    MISMATCH");
                     allMatch = false;
                 }
             }
@@ -91,8 +81,25 @@ internal static class VerifyCommand
         }
         catch (HttpRequestException ex)
         {
-            ConsoleOutput.WriteError($"Error: {ex.Message}");
-            return 1;
+            return ConsoleOutput.HandleHttpError(ex);
+        }
+    }
+
+    private static async Task<(string RelativePath, bool Matched)> VerifyResourceAsync(
+        SkillServerClient client, string skillName, string version, ScannedResource resource)
+    {
+        try
+        {
+            var serverTask = client.GetSkillFileAsStringAsync(
+                skillName, version, resource.RelativePath);
+            var localTask = File.ReadAllTextAsync(resource.AbsolutePath);
+            await Task.WhenAll(serverTask, localTask);
+
+            return (resource.RelativePath, localTask.Result == serverTask.Result);
+        }
+        catch (HttpRequestException)
+        {
+            return (resource.RelativePath, false);
         }
     }
 

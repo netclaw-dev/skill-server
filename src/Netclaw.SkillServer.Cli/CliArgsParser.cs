@@ -126,7 +126,6 @@ internal static class CliArgsParser
                 default:
                     if (!arg.StartsWith('-'))
                     {
-                        // For config set, first two positionals are key/value
                         if (command == "config" && subCommand == "set")
                         {
                             if (configKey is null)
