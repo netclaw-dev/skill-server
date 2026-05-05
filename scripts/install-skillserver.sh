@@ -55,7 +55,7 @@ resolve_version() {
 }
 
 main() {
-    local rid archive_name download_url checksum_url tmp_dir
+    local rid archive_name download_url checksum_url
 
     echo "Installing ${BINARY_NAME}..."
 
@@ -66,8 +66,8 @@ main() {
     download_url="https://github.com/${REPO}/releases/download/${VERSION}/${archive_name}"
     checksum_url="${download_url}.sha256"
 
-    tmp_dir=$(mktemp -d)
-    trap 'rm -rf "$tmp_dir"' EXIT
+    TMP_DIR=$(mktemp -d)
+    trap 'rm -rf "$TMP_DIR"' EXIT
 
     echo "  Platform:  ${rid}"
     echo "  Version:   ${VERSION}"
@@ -75,7 +75,7 @@ main() {
     echo ""
 
     echo "  Downloading ${archive_name}..."
-    if ! curl -fsSL -o "${tmp_dir}/${archive_name}" "$download_url"; then
+    if ! curl -fsSL -o "${TMP_DIR}/${archive_name}" "$download_url"; then
         echo "Error: Failed to download ${archive_name}" >&2
         echo "  URL: ${download_url}" >&2
         echo "  Available platforms: linux-x64, linux-arm64, osx-arm64" >&2
@@ -83,8 +83,8 @@ main() {
     fi
 
     echo "  Verifying checksum..."
-    if curl -fsSL -o "${tmp_dir}/${archive_name}.sha256" "$checksum_url" 2>/dev/null; then
-        cd "$tmp_dir"
+    if curl -fsSL -o "${TMP_DIR}/${archive_name}.sha256" "$checksum_url" 2>/dev/null; then
+        cd "$TMP_DIR"
         if command -v sha256sum > /dev/null 2>&1; then
             sha256sum -c "${archive_name}.sha256" --quiet
         elif command -v shasum > /dev/null 2>&1; then
@@ -101,10 +101,10 @@ main() {
     fi
 
     echo "  Extracting..."
-    tar -xzf "${tmp_dir}/${archive_name}" -C "$tmp_dir"
+    tar -xzf "${TMP_DIR}/${archive_name}" -C "$TMP_DIR"
 
     mkdir -p "${INSTALL_DIR}"
-    cp "${tmp_dir}/${BINARY_NAME}" "${INSTALL_DIR}/${BINARY_NAME}"
+    cp "${TMP_DIR}/${BINARY_NAME}" "${INSTALL_DIR}/${BINARY_NAME}"
     chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
 
     echo ""
