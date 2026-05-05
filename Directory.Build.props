@@ -20,13 +20,20 @@
   </PropertyGroup>
   <!-- Version Management -->
   <PropertyGroup>
-    <VersionPrefix>0.2.1</VersionPrefix>
+    <VersionPrefix>0.3.0</VersionPrefix>
     <PackageReleaseNotes>**New Features**
-- Add resource file upload support to `POST /skills` — skills can now include arbitrary resource files (e.g. `references/guide.md`, `scripts/setup.sh`) per the AgentSkills.io spec (#52)
+- Add `skillserver` CLI tool for publishing and managing skills from the command line (#56)
+  - Commands: `publish`, `publish-all`, `delete`, `list`, `versions`, `verify`, `config`, `api-key`
+  - Distributed as a .NET global tool (`dotnet tool install -g Netclaw.SkillServer.Cli`) and standalone trimmed binaries for linux-x64, linux-arm64, osx-arm64, and win-x64
+  - Install scripts for Linux/macOS (`install-skillserver.sh`) and Windows (`install-skillserver.ps1`)
+- Add `UploadSkillWithResourcesAsync` and `UploadSkillIfNotExistsAsync` to `Netclaw.SkillClient` for idempotent publishing with resource file support (#56)
 
 **Improvements**
-- Resource upload endpoint now supports any subdirectory per the AgentSkills.io spec — previously restricted to `references/` only; all subdirectories are now accessible with path traversal protection (#53)
-- Fix stream leak on validation failure in resource upload path (#53)</PackageReleaseNotes>
+- Consolidate `publish_nuget.yml` and `publish_container.yml` into a unified `release.yml` workflow — NuGet packages, CLI binaries, and container images build in parallel with a single coordinated publish stage (#56)
+- Add CLI publish dry-run, trim warning checks, and install script linting to PR validation (#56)
+
+**Dependency Updates**
+- Bump YamlDotNet from 17.0.1 to 17.1.0 (#55)</PackageReleaseNotes>
   </PropertyGroup>
   <!-- Default: non-packable unless explicitly set -->
   <PropertyGroup>

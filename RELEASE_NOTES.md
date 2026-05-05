@@ -1,3 +1,19 @@
+#### 0.3.0 May 5th 2026 ####
+
+**New Features**
+- Add `skillserver` CLI tool for publishing and managing skills from the command line (#56)
+  - Commands: `publish`, `publish-all`, `delete`, `list`, `versions`, `verify`, `config`, `api-key`
+  - Distributed as a .NET global tool (`dotnet tool install -g Netclaw.SkillServer.Cli`) and standalone trimmed binaries for linux-x64, linux-arm64, osx-arm64, and win-x64
+  - Install scripts for Linux/macOS (`install-skillserver.sh`) and Windows (`install-skillserver.ps1`)
+- Add `UploadSkillWithResourcesAsync` and `UploadSkillIfNotExistsAsync` to `Netclaw.SkillClient` for idempotent publishing with resource file support (#56)
+
+**Improvements**
+- Consolidate `publish_nuget.yml` and `publish_container.yml` into a unified `release.yml` workflow — NuGet packages, CLI binaries, and container images build in parallel with a single coordinated publish stage (#56)
+- Add CLI publish dry-run, trim warning checks, and install script linting to PR validation (#56)
+
+**Dependency Updates**
+- Bump YamlDotNet from 17.0.1 to 17.1.0 (#55)
+
 #### 0.2.1 April 29th 2026 ####
 
 **New Features**
