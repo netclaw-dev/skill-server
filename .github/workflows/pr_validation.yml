@@ -144,8 +144,8 @@ jobs:
             -c Release \
             -r linux-x64 \
             --self-contained \
-            /p:PublishSingleFile=true \
-            /p:TrimmerSingleWarn=false \
+            -p:PublishSingleFile=true \
+            -p:TrimmerSingleWarn=false \
             -o ./publish/linux-x64
 
       - name: "Check trim warnings"
@@ -154,12 +154,12 @@ jobs:
             -c Release \
             -r linux-x64 \
             --self-contained \
-            /p:PublishSingleFile=true \
-            /p:TrimmerSingleWarn=false \
-            /p:TreatWarningsAsErrors=true \
-            /warnAsError:IL2026 /warnAsError:IL2057 \
-            /warnAsError:IL2067 /warnAsError:IL2075 \
-            /warnAsError:IL2096 /warnAsError:IL3050
+            -p:PublishSingleFile=true \
+            -p:TrimmerSingleWarn=false \
+            -p:TreatWarningsAsErrors=true \
+            -warnAsError:IL2026 -warnAsError:IL2057 \
+            -warnAsError:IL2067 -warnAsError:IL2075 \
+            -warnAsError:IL2096 -warnAsError:IL3050
 
       - name: "Smoke test"
         run: |

@@ -42,7 +42,7 @@ jobs:
       run: ./build.ps1
 
     - name: "Pack"
-      run: dotnet pack /p:PackageVersion=${{ github.ref_name }} -c Release -o ./output
+      run: dotnet pack -p:PackageVersion=${{ github.ref_name }} -c Release -o ./output
 
     - name: "Upload artifacts"
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -108,10 +108,10 @@ jobs:
           -c Release \
           -r ${{ matrix.rid }} \
           --self-contained \
-          /p:PublishSingleFile=true \
-          /p:Version=${{ env.VERSION }} \
-          /p:AssemblyVersion=${{ env.ASSEMBLY_VERSION }} \
-          /p:FileVersion=${{ env.ASSEMBLY_VERSION }} \
+          -p:PublishSingleFile=true \
+          -p:Version=${{ env.VERSION }} \
+          -p:AssemblyVersion=${{ env.ASSEMBLY_VERSION }} \
+          -p:FileVersion=${{ env.ASSEMBLY_VERSION }} \
           -o ./publish
 
     - name: "Smoke test"
@@ -187,11 +187,11 @@ jobs:
       run: |
         dotnet publish src/SkillServer/SkillServer.csproj \
           -c Release \
-          /t:PublishContainer \
-          /p:ContainerRegistry=${{ env.CONTAINER_REGISTRY }} \
-          /p:ContainerRepository=${{ env.CONTAINER_IMAGE }} \
-          /p:ContainerRuntimeIdentifier=${{ matrix.rid }} \
-          /p:ContainerImageTags='"${{ github.ref_name }}-${{ matrix.arch }}"'
+          -t:PublishContainer \
+          -p:ContainerRegistry=${{ env.CONTAINER_REGISTRY }} \
+          -p:ContainerRepository=${{ env.CONTAINER_IMAGE }} \
+          -p:ContainerRuntimeIdentifier=${{ matrix.rid }} \
+          -p:ContainerImageTags='"${{ github.ref_name }}-${{ matrix.arch }}"'
 
   # ─── Stage 2: Publish everything once all builds succeed ─────────────
 
