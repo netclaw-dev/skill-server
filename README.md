@@ -16,8 +16,8 @@ This repository contains three components:
 | Component | Description | Install |
 |-----------|-------------|---------|
 | **SkillServer** | Self-hosted skill registry (web server) | `docker pull ghcr.io/netclaw-dev/skillserver` |
-| **skillserver CLI** | Command-line tool for publishing and managing skills | `dotnet tool install -g Netclaw.SkillServer.Cli` |
-| **Netclaw.SkillClient** | Typed .NET client library | `dotnet add package Netclaw.SkillClient` |
+| **[skillserver CLI](src/Netclaw.SkillServer.Cli/README.md)** | Command-line tool for publishing and managing skills | `dotnet tool install -g Netclaw.SkillServer.Cli` |
+| **[Netclaw.SkillClient](src/Netclaw.SkillClient/README.md)** | Typed .NET client library | `dotnet add package Netclaw.SkillClient` |
 
 ## Standards Support
 

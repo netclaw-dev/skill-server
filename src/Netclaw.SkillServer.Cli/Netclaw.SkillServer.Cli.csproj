@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(NetLibVersion)</TargetFramework>
+    <PackageId>Netclaw.SkillServer.Cli</PackageId>
     <AssemblyName>skillserver</AssemblyName>
     <RootNamespace>Netclaw.SkillServer.Cli</RootNamespace>
     <Description>CLI tool for publishing and managing skills on a SkillServer instance.</Description>
