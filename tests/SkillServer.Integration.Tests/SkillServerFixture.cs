@@ -17,6 +17,7 @@ public sealed class SkillServerFixture : IAsyncLifetime
     private HttpClient? _httpClient;
     private HttpClient? _authHttpClient;
     private SkillServerClient? _client;
+    private SkillServerClient? _authClient;
 
     public HttpClient HttpClient => _httpClient
         ?? throw new InvalidOperationException("HttpClient not initialized");
@@ -26,6 +27,9 @@ public sealed class SkillServerFixture : IAsyncLifetime
 
     public SkillServerClient Client => _client
         ?? throw new InvalidOperationException("Client not initialized");
+
+    public SkillServerClient AuthenticatedClient => _authClient
+        ?? throw new InvalidOperationException("AuthenticatedClient not initialized");
 
     public ValueTask InitializeAsync()
     {
@@ -37,6 +41,7 @@ public sealed class SkillServerFixture : IAsyncLifetime
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", TestApiKey);
 
         _client = new SkillServerClient(_httpClient);
+        _authClient = new SkillServerClient(_authHttpClient);
 
         return ValueTask.CompletedTask;
     }
@@ -46,6 +51,7 @@ public sealed class SkillServerFixture : IAsyncLifetime
         _httpClient?.Dispose();
         _authHttpClient?.Dispose();
         _client?.Dispose();
+        _authClient?.Dispose();
 
         if (_factory is not null)
         {
