@@ -24,7 +24,7 @@ This repository contains three components:
 SkillServer implements two complementary standards:
 
 - **[AgentSkills.io](https://agentskills.io)** - The SKILL.md format standard (originally by Anthropic)
-- **[Cloudflare Agent Skills Discovery RFC v0.2.0](https://github.com/cloudflare/agent-skills-spec)** - Discovery via `/.well-known/agent-skills/index.json`
+- **[Cloudflare Agent Skills Discovery RFC v0.2.0](https://github.com/cloudflare/agent-skills-discovery-rfc)** - Discovery via `/.well-known/agent-skills/index.json`
 
 ## Quick Start
 
