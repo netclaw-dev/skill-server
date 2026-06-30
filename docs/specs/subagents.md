@@ -169,6 +169,8 @@ Non-NetClaw clients should sync sub-agents through an adapter that understands t
 
 The canonical SkillServer artifact is `agent-md`: YAML frontmatter plus a markdown system prompt body. An adapter may either install this file directly or translate it into the target client's native format.
 
+Sub-agent sync should follow the same unopinionated model as skill sync. Shared tooling should fetch and verify artifacts, compare local state, and hand the result to a destination adapter. It should not assume NetClaw's `~/.netclaw/agents` layout, OpenCode's layout, Claude Code's layout, or any other target layout.
+
 Adapter responsibilities:
 
 - Decide whether the target client supports `agent-md` directly or needs conversion.

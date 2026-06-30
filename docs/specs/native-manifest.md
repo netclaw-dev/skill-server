@@ -220,8 +220,11 @@ Non-NetClaw clients should consume the native manifest through an adapter layer 
 The recommended split is:
 
 - SkillServer publishes canonical, verified artifacts.
-- `Netclaw.SkillClient` fetches manifests and artifact bytes without choosing local paths.
+- `Netclaw.SkillClient` fetches manifests and artifact bytes without choosing local paths or target client formats.
+- CLI sync commands provide unopinionated download/update primitives for supported resource kinds.
 - A client-specific adapter maps each supported artifact into that client's local format and destination.
+
+This is the same contract SkillServer should use for skills and sub-agents: sync tooling can fetch, verify, compare, and stage artifacts, but the consuming client decides how those artifacts become local runtime configuration.
 
 For sub-agents, an adapter should implement this flow:
 
@@ -251,6 +254,8 @@ Minimum portable fields for adapters are:
 Adapters must ignore unsupported fields rather than rejecting otherwise valid artifacts. A target client that needs additional metadata should use namespaced extension fields and document how its adapter interprets them.
 
 The server protocol should remain one manifest with portable artifact types. It should not grow separate `/manifest/opencode`, `/manifest/claude-code`, or similar feeds unless a client has a hard incompatibility that cannot be solved by an adapter.
+
+The first-party CLI and library should make OpenCode, Claude Code, and other future consumers supportable by composition rather than hard-coding their paths into the server protocol. A future OpenCode sync command, for example, should be able to use the same manifest traversal and verified artifact download helpers, then apply an OpenCode-specific destination and format adapter.
 
 ## Authentication
 

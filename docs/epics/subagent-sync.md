@@ -35,6 +35,7 @@ NetClaw already has a sub-agent format and skill-to-sub-agent routing through `m
 - Sync is safe: digest-verified, failure-tolerant, and non-destructive to user-authored local files.
 - Sync destinations are client-controlled; the server manifest never prescribes local filesystem paths.
 - Non-NetClaw clients consume sub-agents through adapters that map portable `agent-md` artifacts into their own local formats.
+- CLI and client-library sync primitives are destination-agnostic for both skills and sub-agents.
 
 ## Non-Goals
 
@@ -150,6 +151,7 @@ Deliverables:
 - Sub-agent upload/download client methods.
 - Destination-agnostic sync primitives for verified artifact download.
 - Adapter guidance for non-NetClaw clients that need to map `agent-md` into a different local agent format.
+- CLI sync behavior for sub-agents that mirrors the unopinionated skill sync model.
 - NetClaw daemon sync support for native manifest sub-agent resources.
 - Local sync state for sub-agents.
 - Safe install path for server-synced sub-agent files.
@@ -158,6 +160,7 @@ Acceptance criteria:
 
 - NetClaw can sync sub-agents from SkillServer without overwriting user-authored files.
 - Non-NetClaw clients can reuse the library and provide their own destination/format adapters.
+- OpenCode or other future clients can be supported without changing the server manifest shape.
 - NetClaw can resolve skill `metadata.subagent` targets after sync.
 - Failed sync keeps existing local sub-agents.
 - Removed server-side sub-agents are pruned only after a confirmed successful feed sync.
@@ -317,12 +320,14 @@ Tasks:
 - [ ] Add upload/download methods for sub-agent definitions.
 - [ ] Add destination-agnostic helpers for verified artifact download.
 - [ ] Document how non-NetClaw clients can provide destination and format adapters.
+- [ ] Ensure helper APIs do not assume NetClaw application paths or formats.
 - [ ] Preserve AOT source-generated serialization.
 
 Acceptance criteria:
 - Client can fetch root manifest and follow collection links.
 - Client can download a sub-agent artifact and verify digest.
 - Client APIs do not hard-code NetClaw application paths.
+- Client APIs can be reused by an OpenCode or other non-NetClaw sync adapter.
 - Existing RFC client methods remain unchanged.
 ```
 
