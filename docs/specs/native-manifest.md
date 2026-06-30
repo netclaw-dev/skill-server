@@ -142,6 +142,7 @@ An identity index lists all versions for one skill or sub-agent.
 ## Skill Version Detail
 
 Skill version details wrap the exact artifact object that the RFC feed exposes for the same skill version.
+Resourceful skill artifacts use SkillServer's canonical `.zip` archive route, `/skills/{skillName}/{version}/archive.zip`.
 
 ```json
 {

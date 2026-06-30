@@ -119,8 +119,10 @@ Target behavior:
 
 - Skills with only `SKILL.md` should publish as `type: "skill-md"`.
 - Skills with supporting files should publish as `type: "archive"`.
+- SkillServer standardizes archive artifacts on `.zip` at `/skills/{name}/{version}/archive.zip`.
 - Archive artifacts should contain `SKILL.md` at the archive root plus supporting files under their relative paths.
 - The RFC feed and native manifest should point to the same artifact URL and digest for a given skill version.
+- Archive artifact digest and size metadata must be additive. Existing `SKILL.md` digest behavior must remain available for compatibility with current skill download and verification APIs.
 
 Current implementation gap:
 

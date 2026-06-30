@@ -29,6 +29,8 @@ public sealed record SkillVersion
     public required string SkillType { get; init; }
     public required string Sha256 { get; init; }
     public required long SizeBytes { get; init; }
+    public required string ArtifactSha256 { get; init; }
+    public required long ArtifactSizeBytes { get; init; }
     public required DateTimeOffset PublishedAt { get; init; }
     public required bool IsLatest { get; init; }
 }
@@ -58,6 +60,8 @@ public sealed record SkillVersionWithFileCount
     public required string SkillType { get; init; }
     public required string Sha256 { get; init; }
     public required long SizeBytes { get; init; }
+    public required string ArtifactSha256 { get; init; }
+    public required long ArtifactSizeBytes { get; init; }
     public required DateTimeOffset PublishedAt { get; init; }
     public required bool IsLatest { get; init; }
     public required int FileCount { get; init; }
@@ -76,6 +80,8 @@ public sealed record SkillVersionWithMetadata
     public required string SkillType { get; init; }
     public required string Sha256 { get; init; }
     public required long SizeBytes { get; init; }
+    public required string ArtifactSha256 { get; init; }
+    public required long ArtifactSizeBytes { get; init; }
     public required DateTimeOffset PublishedAt { get; init; }
     public required bool IsLatest { get; init; }
     public required string SkillName { get; init; }

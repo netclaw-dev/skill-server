@@ -6,6 +6,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Netclaw.SkillClient;
@@ -21,6 +23,12 @@ public sealed class SkillServerIntegrationTests
     public SkillServerIntegrationTests(SkillServerFixture fixture)
     {
         _fixture = fixture;
+    }
+
+    private static string ComputeSha256Digest(byte[] bytes)
+    {
+        var hash = SHA256.HashData(bytes);
+        return $"sha256:{Convert.ToHexString(hash).ToLowerInvariant()}";
     }
 
     [Fact]
@@ -92,6 +100,9 @@ public sealed class SkillServerIntegrationTests
         var index = await _fixture.Client.GetRfcIndexAsync(ct);
         Assert.NotNull(index);
         Assert.Contains(index.Skills, s => s.Name == skillName);
+        var indexSkill = Assert.Single(index.Skills, s => s.Name == skillName);
+        Assert.Equal("skill-md", indexSkill.Type);
+        Assert.EndsWith($"/skills/{skillName}/1.0.0/SKILL.md", indexSkill.Url, StringComparison.Ordinal);
 
         // Get skill versions
         var versions = await _fixture.Client.GetSkillVersionsAsync(skillName, ct);
@@ -684,6 +695,32 @@ public sealed class SkillServerIntegrationTests
         Assert.NotNull(index);
         var indexSkill = index.Skills.FirstOrDefault(s => s.Name == skillName);
         Assert.NotNull(indexSkill);
+        Assert.Equal("archive", indexSkill!.Type);
+        Assert.EndsWith($"/skills/{skillName}/1.0.0/archive.zip", indexSkill.Url, StringComparison.Ordinal);
+        Assert.NotEqual(version.Sha256, indexSkill.Digest);
+
+        var skillMdVerified = await _fixture.Client.VerifyDigestAsync(skillName, "1.0.0", version.Sha256, ct);
+        Assert.True(skillMdVerified);
+
+        var archiveResponse = await _fixture.HttpClient.GetAsync($"/skills/{skillName}/1.0.0/archive.zip", ct);
+        Assert.Equal(HttpStatusCode.OK, archiveResponse.StatusCode);
+        Assert.Equal("application/zip", archiveResponse.Content.Headers.ContentType?.MediaType);
+
+        var archiveBytes = await archiveResponse.Content.ReadAsByteArrayAsync(ct);
+        Assert.Equal(indexSkill.Digest, ComputeSha256Digest(archiveBytes));
+
+        using var archiveStream = new MemoryStream(archiveBytes);
+        using var archive = new ZipArchive(archiveStream, ZipArchiveMode.Read);
+        Assert.Equal([
+            "SKILL.md",
+            "references/guide.md",
+            "scripts/setup.sh"
+        ], archive.Entries.Select(e => e.FullName).ToArray());
+
+        using var archivedSkillReader = new StreamReader(archive.GetEntry("SKILL.md")!.Open());
+        var archivedSkill = await archivedSkillReader.ReadToEndAsync(ct);
+        Assert.Contains("# Resource Upload Test", archivedSkill);
+
         var resources = indexSkill!.Resources;
         Assert.NotNull(resources);
         Assert.Equal(2, resources!.Count);

@@ -125,8 +125,24 @@ public sealed partial class SkillUploadService
         string? category = null,
         CancellationToken ct = default)
     {
+        if (resources.Count == 0)
+            return await UploadSkillMdAsync(name, version, skillMdContent, category, ct);
+
+        using var skillMdBuffer = new MemoryStream();
+        await skillMdContent.CopyToAsync(skillMdBuffer, ct);
+        var skillMdBytes = skillMdBuffer.ToArray();
+
+        var resourceContents = new List<(ResourcePath Path, byte[] Content)>(resources.Count);
+        foreach (var (resourcePath, content) in resources)
+        {
+            using var resourceBuffer = new MemoryStream();
+            await content.CopyToAsync(resourceBuffer, ct);
+            resourceContents.Add((resourcePath, resourceBuffer.ToArray()));
+        }
+
         // First upload the SKILL.md
-        var result = await UploadSkillMdAsync(name, version, skillMdContent, category, ct);
+        using var skillMdUploadStream = new MemoryStream(skillMdBytes, writable: false);
+        var result = await UploadSkillMdAsync(name, version, skillMdUploadStream, category, ct);
         if (!result.Success)
             return result;
 
@@ -138,13 +154,21 @@ public sealed partial class SkillUploadService
         if (skillVersion is null) return SkillUploadResult.Failed("Version not found after upload.");
 
         // Store resource files
-        foreach (var (resourcePath, content) in resources)
+        foreach (var (resourcePath, contentBytes) in resourceContents)
         {
-            var (digest, sizeBytes) = await _blobStorage.StoreAsync(content, ct);
+            var (digest, sizeBytes) = await _blobStorage.StoreAsync(contentBytes, ct);
             var parsedDigest = Sha256Digest.Create(digest);
             await _repository.AddFileAsync(skillVersion.Id, resourcePath.Value, parsedDigest.Value, sizeBytes, ct);
             _logger.LogDebug("Added resource {Path} ({Digest})", resourcePath.Value, parsedDigest.Value);
         }
+
+        var archiveBytes = SkillArchiveBuilder.BuildZip(skillMdBytes, resourceContents);
+        var (archiveDigest, archiveSizeBytes) = await _blobStorage.StoreAsync(archiveBytes, ct);
+        var parsedArchiveDigest = Sha256Digest.Create(archiveDigest);
+        await _repository.UpdateVersionArtifactAsync(
+            skillVersion.Id, SkillTypes.Archive, parsedArchiveDigest.Value, archiveSizeBytes, ct);
+
+        _logger.LogDebug("Added archive artifact for {Name} {Version} ({Digest})", name.Value, version.Value, parsedArchiveDigest.Value);
 
         return result;
     }

@@ -72,9 +72,10 @@ Bring SkillServer's skill artifact model closer to the Cloudflare RFC.
 Deliverables:
 
 - Archive artifact generation for skills with resources.
-- Archive download endpoint for versioned skills.
+- `.zip` archive download endpoint for versioned skills at `/skills/{name}/{version}/archive.zip`.
 - RFC index emits `type: "archive"` for resourceful skills.
 - Existing per-file resource routes remain available for compatibility.
+- Additive archive artifact metadata that preserves existing `SKILL.md` digest behavior.
 
 Acceptance criteria:
 
@@ -82,6 +83,7 @@ Acceptance criteria:
 - `archive` entries digest the raw archive bytes.
 - Archives contain `SKILL.md` at the root.
 - Archive paths reject traversal and absolute paths.
+- Existing `SKILL.md` download and digest verification behavior remains compatible.
 - Existing resource tests keep passing or have explicit compatibility replacements.
 
 ### Phase 3: Native Manifest API
@@ -220,15 +222,17 @@ Add archive artifact support for skills with resources while preserving existing
 
 Tasks:
 - [ ] Generate deterministic archives for resourceful skill versions.
-- [ ] Add archive download endpoint.
+- [ ] Add `.zip` archive download endpoint at `/skills/{name}/{version}/archive.zip`.
 - [ ] Emit `type: "archive"` in the RFC feed for resourceful skills.
 - [ ] Keep `type: "skill-md"` for single-file skills.
 - [ ] Preserve existing resource URLs for compatibility.
+- [ ] Preserve existing `SKILL.md` digest behavior by storing archive artifact metadata additively.
 
 Acceptance criteria:
 - RFC feed artifact digests verify the exact bytes at `url`.
 - Archive entries contain `SKILL.md` at the archive root.
 - Path traversal and absolute paths are rejected.
+- Existing `SKILL.md` download and digest verification APIs remain compatible.
 - Integration tests cover `skill-md` and `archive` entries.
 ```
 

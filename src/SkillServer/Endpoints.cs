@@ -42,6 +42,7 @@ public static class Endpoints
         skills.MapGet("/{name}/latest", GetLatestVersion);
         skills.MapGet("/{name}/{version}", GetVersion);
         skills.MapGet("/{name}/{version}/SKILL.md", DownloadSkillMd);
+        skills.MapGet("/{name}/{version}/archive.zip", DownloadArchive);
         skills.MapGet("/{name}/{version}/{*path}", DownloadResource);
         skills.MapPost("/check-updates", CheckUpdates);
         skills.MapPost("/", UploadSkill).DisableAntiforgery().AddEndpointFilter<ApiKeyEndpointFilter>();
@@ -161,6 +162,28 @@ public static class Endpoints
             return Results.NotFound();
 
         return Results.File(stream, "text/markdown", "SKILL.md");
+    }
+
+    private static async Task<IResult> DownloadArchive(
+        string name,
+        string version,
+        SkillRepository repository,
+        BlobStorage blobStorage,
+        CancellationToken ct)
+    {
+        var skill = await repository.GetSkillByNameAsync(name, ct);
+        if (skill is null)
+            return Results.NotFound();
+
+        var skillVersion = await repository.GetVersionAsync(skill.Id, version, ct);
+        if (skillVersion is null || skillVersion.SkillType != SkillTypes.Archive)
+            return Results.NotFound();
+
+        var stream = blobStorage.GetBlob(skillVersion.ArtifactSha256);
+        if (stream is null)
+            return Results.NotFound();
+
+        return Results.File(stream, "application/zip", "archive.zip");
     }
 
     private static async Task<IResult> DownloadResource(

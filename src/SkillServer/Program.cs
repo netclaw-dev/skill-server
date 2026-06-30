@@ -26,6 +26,7 @@ builder.Services.AddSingleton<SkillRepository>();
 builder.Services.AddSingleton<ApiKeyRepository>();
 builder.Services.AddSingleton<IndexGenerator>();
 builder.Services.AddSingleton<SkillUploadService>();
+builder.Services.AddSingleton<SkillArchiveBackfillService>();
 builder.Services.AddSingleton<ApiKeyService>();
 
 var app = builder.Build();
@@ -33,6 +34,9 @@ var app = builder.Build();
 // Initialize database
 var dbInitializer = app.Services.GetRequiredService<DatabaseInitializer>();
 await dbInitializer.InitializeAsync();
+
+var archiveBackfillService = app.Services.GetRequiredService<SkillArchiveBackfillService>();
+await archiveBackfillService.BackfillAsync();
 
 // Seed API key from environment variable
 var apiKeyService = app.Services.GetRequiredService<ApiKeyService>();

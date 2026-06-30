@@ -48,8 +48,8 @@ public sealed class IndexGenerator
                 Description = v.Description,
                 Url = v.SkillType == SkillTypes.SkillMd
                     ? $"{baseUrl}/skills/{v.SkillName}/{v.Version}/SKILL.md"
-                    : $"{baseUrl}/skills/{v.SkillName}/{v.Version}/archive.tar.gz",
-                Digest = Sha256Digest.Create(v.Sha256).Value,
+                    : $"{baseUrl}/skills/{v.SkillName}/{v.Version}/archive.zip",
+                Digest = Sha256Digest.Create(v.ArtifactSha256).Value,
                 Version = v.Version,
                 Resources = files.Count > 0
                     ? files.Select(f => new RfcResourceEntry
