@@ -21,10 +21,20 @@ This repository contains three components:
 
 ## Standards Support
 
-SkillServer implements two complementary standards:
+SkillServer implements Agent Skills standards and defines native extensions for NetClaw-aware clients:
 
 - **[AgentSkills.io](https://agentskills.io)** - The SKILL.md format standard (originally by Anthropic)
 - **[Cloudflare Agent Skills Discovery RFC v0.2.0](https://github.com/cloudflare/agent-skills-discovery-rfc)** - Discovery via `/.well-known/agent-skills/index.json`
+- **[SkillServer specifications](docs/specs/README.md)** - Native skill, sub-agent, and manifest sync specs
+
+## Specifications
+
+| Specification | Purpose |
+|---------------|---------|
+| [Skill Packages](docs/specs/skills.md) | How to author and publish AgentSkills.io-compatible SkillServer skills. |
+| [Sub-Agent Packages](docs/specs/subagents.md) | How NetClaw sub-agent definitions are authored and how SkillServer will publish them. |
+| [Native Manifest](docs/specs/native-manifest.md) | Planned non-RFC sync feed for skills, sub-agents, and future native resources. |
+| [Sub-Agent Sync Epic](docs/epics/subagent-sync.md) | Requirements and proposed GitHub issue breakdown for native manifest and sub-agent sync. |
 
 ## Quick Start
 
@@ -59,7 +69,7 @@ Configuration is via environment variables or `appsettings.json`:
 | Endpoint | Description |
 |----------|-------------|
 | `GET /.well-known/agent-skills/index.json` | RFC-compliant skill index |
-| `GET /manifest.json` | NetClaw-compatible manifest |
+| `GET /manifest.json` | Planned NetClaw-native manifest; see [Native Manifest](docs/specs/native-manifest.md) |
 
 ### Skills
 
@@ -165,10 +175,12 @@ See the [client library README](src/Netclaw.SkillClient/README.md) for full API 
 
 ## NetClaw Integration
 
-Add SkillServer as a skill source:
+Current NetClaw feed sync uses the RFC skill discovery endpoint. The planned native manifest will add richer skill metadata and sub-agent sync.
+
+Add SkillServer as a skill source using the configured feed URL for your NetClaw version:
 
 ```bash
-netclaw skill source add my-server --feed http://localhost:8080/manifest.json
+netclaw skill source add my-server --feed http://localhost:8080
 ```
 
 ## Development

@@ -10,7 +10,12 @@ SkillServer is a self-hosted skill registry for AI agents, enabling organization
 |----------|----------|---------|
 | AgentSkills.io | SKILL.md format | Skill definition format |
 | Cloudflare RFC v0.2.0 | `/.well-known/agent-skills/index.json` | Discovery protocol |
-| NetClaw manifest | `/manifest.json` | NetClaw CLI compatibility |
+
+## Planned Native Extensions
+
+| Extension | Endpoint | Purpose |
+|-----------|----------|---------|
+| NetClaw native manifest | `/manifest.json` | Rich paginated sync feed for skills and sub-agents |
 
 ## Architecture
 
@@ -19,13 +24,13 @@ SkillServer is a self-hosted skill registry for AI agents, enabling organization
 │                        SkillServer                          │
 ├─────────────────────────────────────────────────────────────┤
 │  Minimal APIs (Endpoints.cs)                                │
-│    ├── Discovery: RFC index, NetClaw manifest               │
+│    ├── Discovery: RFC index                                 │
 │    ├── Skills: CRUD operations                              │
 │    └── Blobs: Content-addressable storage                   │
 ├─────────────────────────────────────────────────────────────┤
 │  Services                                                   │
 │    ├── SkillUploadService - Upload handling, validation     │
-│    ├── IndexGenerator - RFC/NetClaw index generation        │
+│    ├── IndexGenerator - RFC index generation                │
 │    └── BlobStorage - Content-addressable file storage       │
 ├─────────────────────────────────────────────────────────────┤
 │  Data                                                       │
@@ -69,7 +74,7 @@ SkillServer is a self-hosted skill registry for AI agents, enabling organization
 ## Current State (v0.1.0)
 
 - Full CRUD for skills with versioning
-- RFC and NetClaw discovery endpoints
+- RFC discovery endpoint
 - Content-addressable blob storage
 - 52 tests passing (45 unit + 7 integration)
 - Multi-arch container publishing
@@ -80,3 +85,5 @@ SkillServer is a self-hosted skill registry for AI agents, enabling organization
 - Rate limiting
 - Audit logging
 - Webhook notifications
+- Native manifest for richer NetClaw sync
+- Sub-agent definition publishing and sync
