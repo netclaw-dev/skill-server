@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System.IO.Compression;
 using System.Text;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using SkillServer.Data;
@@ -82,6 +83,8 @@ public sealed class SkillArchiveBackfillServiceTests : IDisposable
 
     public void Dispose()
     {
+        SqliteConnection.ClearAllPools();
+
         if (Directory.Exists(_tempDir))
             Directory.Delete(_tempDir, recursive: true);
     }
