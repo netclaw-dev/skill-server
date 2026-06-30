@@ -213,6 +213,45 @@ Each client owns its local sync policy:
 
 Manifest `url`, `digest`, `name`, `version`, `kind`, and `type` fields are portable. Local filesystem layout is intentionally out of scope for the server protocol.
 
+## Non-NetClaw Client Sync
+
+Non-NetClaw clients should consume the native manifest through an adapter layer rather than requiring SkillServer to publish client-specific feeds.
+
+The recommended split is:
+
+- SkillServer publishes canonical, verified artifacts.
+- `Netclaw.SkillClient` fetches manifests and artifact bytes without choosing local paths.
+- A client-specific adapter maps each supported artifact into that client's local format and destination.
+
+For sub-agents, an adapter should implement this flow:
+
+1. Follow the `subagents` collection from `/manifest.json`.
+2. Traverse to each `subagent-version` detail.
+3. Download the `agent-md` artifact from `url`.
+4. Verify the artifact bytes against `digest`.
+5. Parse the markdown frontmatter and body.
+6. Convert the definition to the target client's local agent format.
+7. Write only into the adapter's configured managed sync location.
+8. Record source feed, name, version, digest, and generated local file path for pruning and updates.
+
+If the target client can consume NetClaw-style markdown directly, the adapter can install `agent-md` without conversion. If the target client has a different format, the adapter owns the mapping.
+
+Minimum portable fields for adapters are:
+
+| Source Field | Adapter Use |
+|--------------|-------------|
+| `name` | Local agent identity or filename. |
+| `description` | Discovery text shown by the target client. |
+| Markdown body | System prompt or agent instructions. |
+| `tools` | Advisory capability metadata when the target client supports it. |
+| `modelRole` | Optional model/profile hint when the target client supports it. |
+| `timeoutSeconds` | Optional execution timeout when the target client supports it. |
+| `visibility` | Whether the adapter exposes or hides the agent when the target client supports visibility. |
+
+Adapters must ignore unsupported fields rather than rejecting otherwise valid artifacts. A target client that needs additional metadata should use namespaced extension fields and document how its adapter interprets them.
+
+The server protocol should remain one manifest with portable artifact types. It should not grow separate `/manifest/opencode`, `/manifest/claude-code`, or similar feeds unless a client has a hard incompatibility that cannot be solved by an adapter.
+
 ## Authentication
 
 Read access may be open for public registries. Private registries may require the same bearer API key already used by SkillServer write endpoints and NetClaw feed configuration.

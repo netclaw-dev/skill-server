@@ -162,3 +162,30 @@ The exact local path is a NetClaw implementation detail, not a SkillServer proto
 - Sync state records version, digest, and source feed.
 
 Non-NetClaw clients can use the same server artifacts by configuring their own sync destination. They should preserve equivalent ownership boundaries between user-authored files and server-synced files.
+
+## Client Adapters
+
+Non-NetClaw clients should sync sub-agents through an adapter that understands that client's local agent format.
+
+The canonical SkillServer artifact is `agent-md`: YAML frontmatter plus a markdown system prompt body. An adapter may either install this file directly or translate it into the target client's native format.
+
+Adapter responsibilities:
+
+- Decide whether the target client supports `agent-md` directly or needs conversion.
+- Map `name`, `description`, and body text to the target client's required fields.
+- Preserve advisory fields such as `tools`, `modelRole`, `timeoutSeconds`, and `visibility` when supported.
+- Ignore unsupported advisory fields.
+- Write generated files only into a configured managed destination for that target client.
+- Track source feed, name, version, digest, and generated file path so updates and pruning do not touch user-authored files.
+- Surface warnings when a target client cannot represent an important field.
+
+Example adapter outcomes:
+
+| Target Client Capability | Adapter Behavior |
+|--------------------------|------------------|
+| Accepts markdown agent files with frontmatter | Write `agent-md` directly. |
+| Accepts markdown prompts but different frontmatter | Rewrite frontmatter and preserve the body. |
+| Accepts JSON/YAML agent definitions | Convert frontmatter and body into the client's schema. |
+| Does not support sub-agents | Ignore `subagent-version` resources and report unsupported capability if requested. |
+
+This keeps SkillServer portable: it publishes one sub-agent artifact model, while clients own installation and format translation.
