@@ -24,6 +24,12 @@ internal static class LintCommand
 {
     public static async Task<int> ExecuteAsync(ParsedArgs args)
     {
+        if (args.Positional.Count > 0 &&
+            args.Positional[0].Equals("subagent", StringComparison.OrdinalIgnoreCase))
+        {
+            return ExecuteSubAgentLint(args);
+        }
+
         if (args.Help || args.Positional.Count == 0)
         {
             PrintHelp();
@@ -105,6 +111,38 @@ internal static class LintCommand
         }
 
         return hasErrors ? 1 : 0;
+    }
+
+    private static int ExecuteSubAgentLint(ParsedArgs args)
+    {
+        if (args.Help || args.Positional.Count < 2)
+        {
+            PrintSubAgentHelp();
+            return args.Help ? 0 : 1;
+        }
+
+        var path = args.Positional[1];
+        var result = SubAgentFileScanner.ValidateFile(path);
+
+        ConsoleOutput.WriteInfo($"Linting sub-agent '{path}'...");
+        Console.WriteLine();
+
+        foreach (var issue in result.Issues)
+            ConsoleOutput.WriteError($"✗ {issue}");
+
+        foreach (var warning in result.Warnings)
+            ConsoleOutput.WriteWarning($"⚠ {warning}");
+
+        Console.WriteLine();
+
+        if (result.Issues.Count == 0)
+        {
+            ConsoleOutput.WriteSuccess($"Sub-agent valid ({result.Warnings.Count} warning(s))");
+            return 0;
+        }
+
+        ConsoleOutput.WriteError($"{result.Issues.Count} error(s), {result.Warnings.Count} warning(s) — lint failed");
+        return 1;
     }
 
     /// <summary>
@@ -206,5 +244,22 @@ internal static class LintCommand
         Console.WriteLine("  - Name format (lowercase alphanumeric with hyphens)");
         Console.WriteLine("  - Semantic version format");
         Console.WriteLine("  - Description present (warning if missing)");
+    }
+
+    private static void PrintSubAgentHelp()
+    {
+        Console.WriteLine("Usage: skillserver lint subagent <path>");
+        Console.WriteLine();
+        Console.WriteLine("Validate a NetClaw-compatible sub-agent markdown file.");
+        Console.WriteLine();
+        Console.WriteLine("Arguments:");
+        Console.WriteLine("  <path>    Path to agent.md or another .md sub-agent definition");
+        Console.WriteLine();
+        Console.WriteLine("Validates:");
+        Console.WriteLine("  - YAML frontmatter exists");
+        Console.WriteLine("  - Required 'name' and 'description' fields are present");
+        Console.WriteLine("  - Name format matches SkillServer resource names");
+        Console.WriteLine("  - Prompt body is not empty");
+        Console.WriteLine("  - modelRole, visibility, timeoutSeconds, and prefillTimeoutSeconds values are valid");
     }
 }

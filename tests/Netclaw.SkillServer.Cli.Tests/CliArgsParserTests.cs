@@ -79,6 +79,44 @@ public sealed class CliArgsParserTests
     }
 
     [Fact]
+    public void Parse_PublishSubAgentCommand_WithAllFlags()
+    {
+        var result = CliArgsParser.Parse([
+            "publish-subagent", "./agents/support-agent.md",
+            "--version", "1.0.0",
+            "--force",
+            "--dry-run",
+            "--verbose"
+        ]);
+
+        Assert.Equal("publish-subagent", result.Command);
+        Assert.Equal("./agents/support-agent.md", result.Positional[0]);
+        Assert.Equal("1.0.0", result.VersionOverride);
+        Assert.True(result.Force);
+        Assert.True(result.DryRun);
+        Assert.True(result.Verbose);
+    }
+
+    [Fact]
+    public void Parse_DownloadSubAgentCommand_WithFlags()
+    {
+        var result = CliArgsParser.Parse([
+            "download-subagent", "support-agent", "1.0.0", "./staging/support-agent.md",
+            "--force",
+            "--dry-run",
+            "--verbose"
+        ]);
+
+        Assert.Equal("download-subagent", result.Command);
+        Assert.Equal("support-agent", result.Positional[0]);
+        Assert.Equal("1.0.0", result.Positional[1]);
+        Assert.Equal("./staging/support-agent.md", result.Positional[2]);
+        Assert.True(result.Force);
+        Assert.True(result.DryRun);
+        Assert.True(result.Verbose);
+    }
+
+    [Fact]
     public void Parse_ListCommand_WithSearch()
     {
         var result = CliArgsParser.Parse(["list", "--search", "akka", "--take", "10"]);

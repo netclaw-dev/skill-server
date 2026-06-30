@@ -44,6 +44,27 @@ public sealed class ProgramDispatchTests : IDisposable
     }
 
     [Fact]
+    public async Task LintSubAgent_DoesNotRequireServerUrl()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var agentPath = Path.Combine(_tempDir, "support-agent.md");
+        await File.WriteAllTextAsync(agentPath, """
+            ---
+            name: support-agent
+            description: Diagnose support issues.
+            ---
+
+            You are a support diagnostician.
+            """, ct);
+
+        var result = await RunCliAsync(["lint", "subagent", agentPath], ct);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.DoesNotContain("Server URL not configured", result.StdErr);
+        Assert.DoesNotContain("Server URL not configured", result.StdOut);
+    }
+
+    [Fact]
     public async Task List_RequiresServerUrl()
     {
         var ct = TestContext.Current.CancellationToken;

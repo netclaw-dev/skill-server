@@ -53,7 +53,7 @@ if (parsedArgs.Help)
 var resolver = new ConfigResolver();
 var config = resolver.Resolve(parsedArgs.ServerUrl, parsedArgs.ApiKey);
 
-var requiresAuth = parsedArgs.Command is not "list" and not "versions" and not "verify";
+var requiresAuth = parsedArgs.Command is not "list" and not "versions" and not "verify" and not "download-subagent";
 
 if (!config.HasServerUrl)
 {
@@ -77,6 +77,8 @@ static async Task<int> DispatchAsync(ParsedArgs parsedArgs, SkillServerClient cl
     parsedArgs.Command switch
     {
         "publish" => await PublishCommand.ExecuteAsync(parsedArgs, client),
+        "publish-subagent" => await PublishSubAgentCommand.ExecuteAsync(parsedArgs, client),
+        "download-subagent" => await DownloadSubAgentCommand.ExecuteAsync(parsedArgs, client),
         "publish-all" => await PublishAllCommand.ExecuteAsync(parsedArgs, client),
         "delete" => await DeleteCommand.ExecuteAsync(parsedArgs, client),
         "list" => await ListCommand.ExecuteAsync(parsedArgs, client),
@@ -118,8 +120,10 @@ static void PrintHelp()
     Console.WriteLine();
     Console.WriteLine("Commands:");
     Console.WriteLine("  publish <path>            Publish a skill directory to the server");
+    Console.WriteLine("  publish-subagent <path>   Publish a sub-agent markdown file to the server");
+    Console.WriteLine("  download-subagent <n> <v> <path> Download a verified sub-agent artifact");
     Console.WriteLine("  publish-all <path>        Batch-publish all skills in a directory");
-    Console.WriteLine("  lint <path>               Validate skills against spec (no auth required)");
+    Console.WriteLine("  lint <path>               Validate skills or sub-agents (no auth required)");
     Console.WriteLine("  delete <name> <version>   Delete a published skill version");
     Console.WriteLine("  list                      List skills on the server");
     Console.WriteLine("  versions <name>           List all versions of a skill");
