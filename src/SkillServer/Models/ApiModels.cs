@@ -43,6 +43,21 @@ public sealed record SkillUploadResponse
     public required string Url { get; init; }
 }
 
+public sealed record SubAgentUploadResponse
+{
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+
+    [JsonPropertyName("version")]
+    public required string Version { get; init; }
+
+    [JsonPropertyName("sha256")]
+    public required string Sha256 { get; init; }
+
+    [JsonPropertyName("url")]
+    public required string Url { get; init; }
+}
+
 /// <summary>
 /// Summary of a skill (all versions).
 /// </summary>
@@ -101,6 +116,69 @@ public sealed record SkillVersionSummary
 
     [JsonPropertyName("fileCount")]
     public required int FileCount { get; init; }
+}
+
+public sealed record SubAgentSummary
+{
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+
+    [JsonPropertyName("description")]
+    public required string Description { get; init; }
+
+    [JsonPropertyName("latestVersion")]
+    public required string LatestVersion { get; init; }
+
+    [JsonPropertyName("versionCount")]
+    public required int VersionCount { get; init; }
+
+    [JsonPropertyName("createdAt")]
+    public required DateTimeOffset CreatedAt { get; init; }
+
+    [JsonPropertyName("updatedAt")]
+    public required DateTimeOffset UpdatedAt { get; init; }
+}
+
+public sealed record SubAgentVersionSummary
+{
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+
+    [JsonPropertyName("version")]
+    public required string Version { get; init; }
+
+    [JsonPropertyName("type")]
+    public string Type { get; init; } = SubAgentTypes.AgentMd;
+
+    [JsonPropertyName("description")]
+    public required string Description { get; init; }
+
+    [JsonPropertyName("modelRole")]
+    public required string ModelRole { get; init; }
+
+    [JsonPropertyName("timeoutSeconds")]
+    public required int TimeoutSeconds { get; init; }
+
+    [JsonPropertyName("prefillTimeoutSeconds")]
+    public int? PrefillTimeoutSeconds { get; init; }
+
+    [JsonPropertyName("visibility")]
+    public required string Visibility { get; init; }
+
+    [JsonPropertyName("emitStructuredFindings")]
+    public required bool EmitStructuredFindings { get; init; }
+
+    [JsonPropertyName("sha256")]
+    public required string Sha256 { get; init; }
+
+    [JsonPropertyName("sizeBytes")]
+    public required long SizeBytes { get; init; }
+
+    [JsonPropertyName("publishedAt")]
+    public required DateTimeOffset PublishedAt { get; init; }
+
+    [JsonPropertyName("isLatest")]
+    public required bool IsLatest { get; init; }
 }
 
 /// <summary>

@@ -23,10 +23,12 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<DatabaseInitializer>();
 builder.Services.AddSingleton<BlobStorage>();
 builder.Services.AddSingleton<SkillRepository>();
+builder.Services.AddSingleton<SubAgentRepository>();
 builder.Services.AddSingleton<ApiKeyRepository>();
 builder.Services.AddSingleton<IndexGenerator>();
 builder.Services.AddSingleton<NativeManifestGenerator>();
 builder.Services.AddSingleton<SkillUploadService>();
+builder.Services.AddSingleton<SubAgentUploadService>();
 builder.Services.AddSingleton<SkillArchiveBackfillService>();
 builder.Services.AddSingleton<ApiKeyService>();
 

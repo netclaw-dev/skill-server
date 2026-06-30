@@ -31,6 +31,19 @@ public sealed class SkillServerIntegrationTests
         return $"sha256:{Convert.ToHexString(hash).ToLowerInvariant()}";
     }
 
+    private static MultipartFormDataContent CreateSubAgentUpload(string name, string version, string content)
+    {
+        var form = new MultipartFormDataContent();
+        form.Add(new StringContent(name), "name");
+        form.Add(new StringContent(version), "version");
+
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(content));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/markdown");
+        form.Add(fileContent, "file", "agent.md");
+
+        return form;
+    }
+
     [Fact]
     public async Task Health_ReturnsOk()
     {
@@ -193,6 +206,136 @@ public sealed class SkillServerIntegrationTests
         Assert.Equal(rfcSkill.Description, detail.Artifact.Description);
         Assert.Equal(rfcSkill.Url, detail.Artifact.Url);
         Assert.Equal(rfcSkill.Digest, detail.Artifact.Digest);
+    }
+
+    [Fact]
+    public async Task UploadAndRetrieveSubAgent_EndToEnd()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var subAgentName = $"agent-{Guid.NewGuid():N}"[..20];
+
+        var agentMd = $"""
+            ---
+            name: {subAgentName}
+            description: Diagnose technical support issues.
+            modelRole: Main
+            timeoutSeconds: 120
+            prefillTimeoutSeconds: 30
+            visibility: internal
+            emitStructuredFindings: true
+            ---
+
+            You are a technical support diagnostician.
+            """;
+
+        using var content = CreateSubAgentUpload(subAgentName, "1.0.0", agentMd);
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/subagents", content, ct);
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var upload = await uploadResponse.Content.ReadFromJsonAsync<SkillServer.Models.SubAgentUploadResponse>(ct);
+        Assert.NotNull(upload);
+        Assert.Equal(subAgentName, upload.Name);
+        Assert.Equal("1.0.0", upload.Version);
+        Assert.StartsWith("sha256:", upload.Sha256);
+        Assert.EndsWith($"/subagents/{subAgentName}/1.0.0/agent.md", upload.Url, StringComparison.Ordinal);
+
+        var list = await _fixture.HttpClient.GetFromJsonAsync<IReadOnlyList<SkillServer.Models.SubAgentSummary>>("/subagents", ct);
+        Assert.NotNull(list);
+        Assert.Contains(list, s => s.Name == subAgentName && s.LatestVersion == "1.0.0");
+
+        var versions = await _fixture.HttpClient.GetFromJsonAsync<IReadOnlyList<SkillServer.Models.SubAgentVersionSummary>>(
+            $"/subagents/{subAgentName}", ct);
+        Assert.NotNull(versions);
+        var version = Assert.Single(versions);
+        Assert.Equal("agent-md", version.Type);
+        Assert.Equal("Main", version.ModelRole);
+        Assert.Equal(120, version.TimeoutSeconds);
+        Assert.Equal(30, version.PrefillTimeoutSeconds);
+        Assert.Equal("internal", version.Visibility);
+        Assert.True(version.EmitStructuredFindings);
+
+        var versionDetail = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.SubAgentVersionSummary>(
+            $"/subagents/{subAgentName}/1.0.0", ct);
+        Assert.NotNull(versionDetail);
+        Assert.Equal(upload.Sha256, versionDetail.Sha256);
+
+        var artifactResponse = await _fixture.HttpClient.GetAsync($"/subagents/{subAgentName}/1.0.0/agent.md", ct);
+        Assert.Equal(HttpStatusCode.OK, artifactResponse.StatusCode);
+        Assert.Equal("text/markdown", artifactResponse.Content.Headers.ContentType?.MediaType);
+
+        var artifactBytes = await artifactResponse.Content.ReadAsByteArrayAsync(ct);
+        Assert.Equal(upload.Sha256, ComputeSha256Digest(artifactBytes));
+        Assert.Contains("technical support diagnostician", Encoding.UTF8.GetString(artifactBytes));
+
+        var rfcIndex = await _fixture.Client.GetRfcIndexAsync(ct);
+        Assert.NotNull(rfcIndex);
+        Assert.DoesNotContain(rfcIndex.Skills, s => s.Name == subAgentName);
+    }
+
+    [Fact]
+    public async Task UploadSubAgent_DuplicateVersion_ReturnsConflict()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var subAgentName = $"dupe-{Guid.NewGuid():N}"[..20];
+        var agentMd = $"---\nname: {subAgentName}\ndescription: Duplicate test\n---\nPrompt body";
+
+        using var first = CreateSubAgentUpload(subAgentName, "1.0.0", agentMd);
+        var firstResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/subagents", first, ct);
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+
+        using var second = CreateSubAgentUpload(subAgentName, "1.0.0", agentMd);
+        var secondResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/subagents", second, ct);
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadSubAgent_InvalidFrontmatter_ReturnsBadRequest()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        var cases = new[]
+        {
+            (Name: $"missing-desc-{Guid.NewGuid():N}"[..20], Body: "description: ", Expected: "description"),
+            (Name: $"empty-body-{Guid.NewGuid():N}"[..20], Body: "description: Empty body", Expected: "non-empty prompt body"),
+            (Name: $"bad-role-{Guid.NewGuid():N}"[..20], Body: "description: Bad role\nmodelRole: Worker", Expected: "modelRole"),
+            (Name: $"bad-timeout-{Guid.NewGuid():N}"[..20], Body: "description: Bad timeout\ntimeoutSeconds: 1", Expected: "timeoutSeconds"),
+            (Name: $"bad-prefill-{Guid.NewGuid():N}"[..20], Body: "description: Bad prefill\nprefillTimeoutSeconds: 1", Expected: "prefillTimeoutSeconds"),
+            (Name: $"bad-vis-{Guid.NewGuid():N}"[..20], Body: "description: Bad visibility\nvisibility: public", Expected: "visibility")
+        };
+
+        foreach (var testCase in cases)
+        {
+            var promptBody = testCase.Name.StartsWith("empty-body", StringComparison.Ordinal) ? "" : "Prompt body";
+            var agentMd = $"---\nname: {testCase.Name}\n{testCase.Body}\n---\n{promptBody}";
+            using var content = CreateSubAgentUpload(testCase.Name, "1.0.0", agentMd);
+
+            var response = await _fixture.AuthenticatedHttpClient.PostAsync("/subagents", content, ct);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            var error = await response.Content.ReadFromJsonAsync<SkillServer.Models.ErrorResponse>(ct);
+            Assert.NotNull(error);
+            Assert.Contains(testCase.Expected, error.Message, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteSubAgentVersion_RemovesVersion()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var subAgentName = $"delete-agent-{Guid.NewGuid():N}"[..20];
+        var agentMd = $"---\nname: {subAgentName}\ndescription: Delete test\n---\nPrompt body";
+
+        using var content = CreateSubAgentUpload(subAgentName, "1.0.0", agentMd);
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/subagents", content, ct);
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var deleteResponse = await _fixture.AuthenticatedHttpClient.DeleteAsync($"/subagents/{subAgentName}/1.0.0", ct);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var versions = await _fixture.HttpClient.GetFromJsonAsync<IReadOnlyList<SkillServer.Models.SubAgentVersionSummary>>(
+            $"/subagents/{subAgentName}", ct);
+        Assert.NotNull(versions);
+        Assert.Empty(versions);
     }
 
     [Fact]

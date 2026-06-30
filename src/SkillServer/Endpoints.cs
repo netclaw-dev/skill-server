@@ -17,6 +17,7 @@ public static class Endpoints
         app.MapDiscoveryEndpoints();
         app.MapManifestEndpoints();
         app.MapSkillEndpoints();
+        app.MapSubAgentEndpoints();
         app.MapBlobEndpoints();
         app.MapApiKeyEndpoints();
         app.MapHealthEndpoints();
@@ -103,6 +104,18 @@ public static class Endpoints
         skills.MapPost("/check-updates", CheckUpdates);
         skills.MapPost("/", UploadSkill).DisableAntiforgery().AddEndpointFilter<ApiKeyEndpointFilter>();
         skills.MapDelete("/{name}/{version}", DeleteVersion).AddEndpointFilter<ApiKeyEndpointFilter>();
+    }
+
+    private static void MapSubAgentEndpoints(this WebApplication app)
+    {
+        var subagents = app.MapGroup("/subagents");
+
+        subagents.MapGet("/", ListSubAgents);
+        subagents.MapGet("/{name}", GetSubAgent);
+        subagents.MapGet("/{name}/{version}", GetSubAgentVersion);
+        subagents.MapGet("/{name}/{version}/agent.md", DownloadSubAgentMd);
+        subagents.MapPost("/", UploadSubAgent).DisableAntiforgery().AddEndpointFilter<ApiKeyEndpointFilter>();
+        subagents.MapDelete("/{name}/{version}", DeleteSubAgentVersion).AddEndpointFilter<ApiKeyEndpointFilter>();
     }
 
     private static void MapHealthEndpoints(this WebApplication app)
@@ -459,6 +472,184 @@ public static class Endpoints
 
         return Results.Json(results, SkillServerJsonContext.Default.IReadOnlyListCheckUpdateResponseItem);
     }
+
+    private static async Task<IResult> ListSubAgents(
+        SubAgentRepository repository,
+        CancellationToken ct)
+    {
+        var latestVersions = await repository.GetAllLatestVersionsWithMetadataAsync(ct);
+        var summaries = latestVersions.Select(v => new SubAgentSummary
+        {
+            Name = v.SubAgentName,
+            Description = v.Description,
+            LatestVersion = v.Version,
+            VersionCount = v.VersionCount,
+            CreatedAt = v.SubAgentCreatedAt,
+            UpdatedAt = v.SubAgentUpdatedAt
+        }).ToList();
+
+        return Results.Json(summaries, SkillServerJsonContext.Default.IReadOnlyListSubAgentSummary);
+    }
+
+    private static async Task<IResult> GetSubAgent(
+        string name,
+        SubAgentRepository repository,
+        CancellationToken ct)
+    {
+        var subAgent = await repository.GetSubAgentByNameAsync(name, ct);
+        if (subAgent is null)
+            return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Sub-agent '{name}' not found." });
+
+        var versions = await repository.GetAllVersionsAsync(subAgent.Id, ct);
+        var summaries = versions.Select(v => ToSubAgentVersionSummary(subAgent.Name, v)).ToList();
+
+        return Results.Json(summaries, SkillServerJsonContext.Default.IReadOnlyListSubAgentVersionSummary);
+    }
+
+    private static async Task<IResult> GetSubAgentVersion(
+        string name,
+        string version,
+        SubAgentRepository repository,
+        CancellationToken ct)
+    {
+        var subAgent = await repository.GetSubAgentByNameAsync(name, ct);
+        if (subAgent is null)
+            return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Sub-agent '{name}' not found." });
+
+        var subAgentVersion = await repository.GetVersionAsync(subAgent.Id, version, ct);
+        if (subAgentVersion is null)
+            return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Version '{version}' not found for sub-agent '{name}'." });
+
+        return Results.Json(ToSubAgentVersionSummary(subAgent.Name, subAgentVersion), SkillServerJsonContext.Default.SubAgentVersionSummary);
+    }
+
+    private static async Task<IResult> DownloadSubAgentMd(
+        string name,
+        string version,
+        SubAgentRepository repository,
+        BlobStorage blobStorage,
+        CancellationToken ct)
+    {
+        var subAgent = await repository.GetSubAgentByNameAsync(name, ct);
+        if (subAgent is null)
+            return Results.NotFound();
+
+        var subAgentVersion = await repository.GetVersionAsync(subAgent.Id, version, ct);
+        if (subAgentVersion is null)
+            return Results.NotFound();
+
+        var stream = blobStorage.GetBlob(subAgentVersion.Sha256);
+        if (stream is null)
+            return Results.NotFound();
+
+        return Results.File(stream, "text/markdown", "agent.md");
+    }
+
+    private static async Task<IResult> UploadSubAgent(
+        [FromForm] IFormFile file,
+        [FromForm] string name,
+        [FromForm] string version,
+        SubAgentUploadService uploadService,
+        IConfiguration configuration,
+        CancellationToken ct)
+    {
+        if (!SkillName.TryCreate(name, out var subAgentName))
+        {
+            return Results.BadRequest(new ErrorResponse
+            {
+                Error = "invalid_name",
+                Message = "Invalid sub-agent name. Must be 1-64 lowercase alphanumeric characters and hyphens."
+            });
+        }
+
+        if (!SkillVersionString.TryCreate(version, out var subAgentVersion))
+        {
+            return Results.BadRequest(new ErrorResponse
+            {
+                Error = "invalid_version",
+                Message = "Invalid version string."
+            });
+        }
+
+        if (!file.FileName.Equals("agent.md", StringComparison.OrdinalIgnoreCase) &&
+            !file.FileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.BadRequest(new ErrorResponse
+            {
+                Error = "invalid_file",
+                Message = "File must be agent.md or a markdown file."
+            });
+        }
+
+        await using var stream = file.OpenReadStream();
+        var result = await uploadService.UploadSubAgentAsync(subAgentName.Value, subAgentVersion.Value, stream, ct);
+        return HandleSubAgentUploadResult(result, configuration);
+    }
+
+    private static IResult HandleSubAgentUploadResult(SubAgentUploadResult result, IConfiguration configuration)
+    {
+        if (!result.Success)
+        {
+            if (result.IsDuplicateVersion)
+            {
+                return Results.Conflict(new ErrorResponse
+                {
+                    Error = "duplicate_version",
+                    Message = result.Error ?? "Version already exists."
+                });
+            }
+
+            return Results.BadRequest(new ErrorResponse
+            {
+                Error = "upload_failed",
+                Message = result.Error ?? "Upload failed."
+            });
+        }
+
+        var baseUrl = configuration["SkillServer:BaseUrl"]?.TrimEnd('/') ?? "http://localhost:8080";
+        return Results.Created(
+            $"/subagents/{result.Name}/{result.Version}",
+            new SubAgentUploadResponse
+            {
+                Name = result.Name!.Value.Value,
+                Version = result.Version!.Value.Value,
+                Sha256 = result.Digest!.Value.Value,
+                Url = $"{baseUrl}/subagents/{result.Name}/{result.Version}/agent.md"
+            });
+    }
+
+    private static async Task<IResult> DeleteSubAgentVersion(
+        string name,
+        string version,
+        SubAgentRepository repository,
+        CancellationToken ct)
+    {
+        var subAgent = await repository.GetSubAgentByNameAsync(name, ct);
+        if (subAgent is null)
+            return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Sub-agent '{name}' not found." });
+
+        var deleted = await repository.DeleteVersionAsync(subAgent.Id, version, ct);
+        if (!deleted)
+            return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Version '{version}' not found." });
+
+        return Results.NoContent();
+    }
+
+    private static SubAgentVersionSummary ToSubAgentVersionSummary(string name, SubAgentVersion version) => new()
+    {
+        Name = name,
+        Version = version.Version,
+        Description = version.Description,
+        ModelRole = version.ModelRole,
+        TimeoutSeconds = version.TimeoutSeconds,
+        PrefillTimeoutSeconds = version.PrefillTimeoutSeconds,
+        Visibility = version.Visibility,
+        EmitStructuredFindings = version.EmitStructuredFindings,
+        Sha256 = version.Sha256,
+        SizeBytes = version.SizeBytes,
+        PublishedAt = version.PublishedAt,
+        IsLatest = version.IsLatest
+    };
 
     private static void MapApiKeyEndpoints(this WebApplication app)
     {
