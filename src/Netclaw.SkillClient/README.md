@@ -48,6 +48,38 @@ foreach (var skill in index.Skills)
 }
 ```
 
+## Native Manifest Traversal
+
+Use the native manifest when you need SkillServer-specific version history, resourceful skill artifacts, or sub-agent definitions.
+
+```csharp
+var manifest = await client.GetManifestAsync();
+
+var skillIndex = await client.GetNativeSkillIndexAsync(manifest.Links.Skills);
+var skillPage = await client.GetNativeSkillPageAsync(skillIndex.Pages[0]);
+var skill = await client.GetNativeSkillIdentityAsync(skillPage.Items[0]);
+var skillVersion = await client.GetNativeSkillVersionAsync(skill.Versions[0]);
+
+var stagingPath = Path.GetTempFileName();
+await using var staging = File.Create(stagingPath);
+await client.DownloadNativeSkillArtifactAsync(skillVersion.Artifact, staging);
+```
+
+Sub-agents are native resources and do not appear in the RFC skill feed.
+
+```csharp
+var subAgentIndex = await client.GetNativeSubAgentIndexAsync(manifest.Links.SubAgents);
+var subAgentPage = await client.GetNativeSubAgentPageAsync(subAgentIndex.Pages[0]);
+var subAgent = await client.GetNativeSubAgentIdentityAsync(subAgentPage.Items[0]);
+var subAgentVersion = await client.GetNativeSubAgentVersionAsync(subAgent.Versions[0]);
+
+var stagingPath = Path.GetTempFileName();
+await using var staging = File.Create(stagingPath);
+await client.DownloadNativeSubAgentArtifactAsync(subAgentVersion, staging);
+```
+
+The download helpers verify SHA-256 digests before returning. They write to caller-provided streams, so your sync code chooses the staging path, final destination, and install policy.
+
 ## Listing and Browsing Skills
 
 ```csharp
@@ -108,6 +140,32 @@ await using var resource = await client.GetSkillFileAsync("my-skill", "1.0.0", "
 // Download a blob by its SHA-256 digest
 await using var blob = await client.GetBlobAsync("sha256:abc123...");
 ```
+
+## Publishing and Downloading Sub-Agents
+
+Requires an API key for publishing and deleting. Reads are open on public registries.
+
+```csharp
+await using var file = File.OpenRead("agent.md");
+var result = await client.UploadSubAgentAsync("support-agent", "1.0.0", file);
+
+var versions = await client.GetSubAgentVersionsAsync("support-agent");
+var agent = await client.GetSubAgentFileAsStringAsync("support-agent", "1.0.0");
+
+await client.DeleteSubAgentVersionAsync("support-agent", "1.0.0");
+```
+
+## Adapter Guidance
+
+`Netclaw.SkillClient` fetches manifests and verifies artifact bytes. It does not choose local filesystem paths or convert `agent-md` into a client-specific format.
+
+Non-NetClaw clients should provide an adapter that:
+
+- Chooses managed staging and install destinations.
+- Downloads artifacts with `DownloadVerifiedArtifactAsync` or the native artifact helpers.
+- Parses `agent-md` when the target client needs a different local agent format.
+- Records source feed, resource name, version, digest, and generated local path for update and prune decisions.
+- Writes only into adapter-owned managed locations so user-authored files are not overwritten.
 
 ## Verifying Integrity
 

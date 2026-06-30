@@ -13,7 +13,7 @@ namespace Netclaw.SkillClient;
 /// <summary>
 /// Client for consuming SkillServer APIs.
 /// </summary>
-public sealed class SkillServerClient : IDisposable
+public sealed partial class SkillServerClient : IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly bool _ownsHttpClient;
@@ -140,9 +140,7 @@ public sealed class SkillServerClient : IDisposable
     /// </summary>
     public async Task<bool> VerifyDigestAsync(string name, string version, string expectedDigest, CancellationToken ct = default)
     {
-        var expectedHex = expectedDigest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
-            ? expectedDigest[7..].ToLowerInvariant()
-            : expectedDigest.ToLowerInvariant();
+        var expectedHex = NormalizeSha256Digest(expectedDigest);
 
         await using var stream = await GetSkillFileAsync(name, version, "SKILL.md", ct);
         using var sha256 = SHA256.Create();
