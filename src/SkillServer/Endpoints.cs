@@ -15,6 +15,7 @@ public static class Endpoints
     public static WebApplication MapSkillServerEndpoints(this WebApplication app)
     {
         app.MapDiscoveryEndpoints();
+        app.MapManifestEndpoints();
         app.MapSkillEndpoints();
         app.MapBlobEndpoints();
         app.MapApiKeyEndpoints();
@@ -30,6 +31,61 @@ public static class Endpoints
         {
             var index = await indexGenerator.GenerateRfcIndexAsync(ct);
             return Results.Json(index, SkillServerJsonContext.Default.RfcSkillIndex);
+        });
+    }
+
+    private static void MapManifestEndpoints(this WebApplication app)
+    {
+        app.MapGet("/manifest.json", async (
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var manifest = await manifestGenerator.GenerateRootAsync(ct);
+            return Results.Json(manifest, SkillServerJsonContext.Default.NativeRootManifest);
+        });
+
+        var manifest = app.MapGroup("/manifest");
+
+        manifest.MapGet("/skills/index.json", async (
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var index = await manifestGenerator.GenerateSkillIndexAsync(ct);
+            return Results.Json(index, SkillServerJsonContext.Default.NativeSkillCollectionIndex);
+        });
+
+        manifest.MapGet("/skills/pages/{page}.json", async (
+            string page,
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var skillPage = await manifestGenerator.GenerateSkillPageAsync(page, ct);
+            return skillPage is null
+                ? Results.NotFound()
+                : Results.Json(skillPage, SkillServerJsonContext.Default.NativeSkillCollectionPage);
+        });
+
+        manifest.MapGet("/skills/{skillName}/index.json", async (
+            string skillName,
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var skill = await manifestGenerator.GenerateSkillIdentityAsync(skillName, ct);
+            return skill is null
+                ? Results.NotFound()
+                : Results.Json(skill, SkillServerJsonContext.Default.NativeSkillIdentityIndex);
+        });
+
+        manifest.MapGet("/skills/{skillName}/versions/{version}.json", async (
+            string skillName,
+            string version,
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var skillVersion = await manifestGenerator.GenerateSkillVersionAsync(skillName, version, ct);
+            return skillVersion is null
+                ? Results.NotFound()
+                : Results.Json(skillVersion, SkillServerJsonContext.Default.NativeSkillVersionDetail);
         });
     }
 

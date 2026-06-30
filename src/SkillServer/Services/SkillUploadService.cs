@@ -70,6 +70,15 @@ public sealed partial class SkillUploadService
             return SkillUploadResult.Failed("SKILL.md must have a description in frontmatter.");
         }
 
+        string? routesToSubagent = null;
+        if (frontmatter.Metadata?.TryGetValue("subagent", out var subagent) == true)
+        {
+            if (!SkillName.TryCreate(subagent, out var subagentName))
+                return SkillUploadResult.Failed("Invalid metadata.subagent value. Must be a valid lowercase kebab-case sub-agent name.");
+
+            routesToSubagent = subagentName.Value.Value;
+        }
+
         // Store the blob
         var contentBytes = Encoding.UTF8.GetBytes(skillMdContent);
         var (digest, sizeBytes) = await _blobStorage.StoreAsync(contentBytes, ct);
@@ -105,7 +114,8 @@ public sealed partial class SkillUploadService
             SkillTypes.SkillMd,
             parsedDigest.Value,
             sizeBytes,
-            ct);
+            ct,
+            routesToSubagent: routesToSubagent);
 
         await _repository.UpdateSkillTimestampAsync(skillId, ct);
 

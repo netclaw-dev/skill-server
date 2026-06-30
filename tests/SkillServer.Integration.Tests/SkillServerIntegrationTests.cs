@@ -124,6 +124,78 @@ public sealed class SkillServerIntegrationTests
     }
 
     [Fact]
+    public async Task NativeManifest_SkillTraversal_ReturnsRfcArtifactValues()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var skillName = $"manifest-{Guid.NewGuid():N}"[..20];
+
+        var skillContent = $"""
+            ---
+            name: {skillName}
+            description: Native manifest traversal test
+            metadata:
+              subagent: technical-support-diagnostician
+            ---
+
+            # Native Manifest Test
+            """;
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(skillName), "name");
+        content.Add(new StringContent("1.0.0"), "version");
+
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(skillContent));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/markdown");
+        content.Add(fileContent, "file", "SKILL.md");
+
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/skills", content, ct);
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var root = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeRootManifest>("/manifest.json", ct);
+        Assert.NotNull(root);
+        Assert.Equal("/manifest.json", root.Links.Self.Href);
+        Assert.Equal("/.well-known/agent-skills/index.json", root.Links.RfcSkills.Href);
+        Assert.Equal("/manifest/skills/index.json", root.Links.Skills.Href);
+
+        var skillIndex = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillCollectionIndex>(
+            root.Links.Skills.Href, ct);
+        Assert.NotNull(skillIndex);
+        Assert.Equal("skill-index", skillIndex.Kind);
+        var pageLink = Assert.Single(skillIndex.Pages);
+
+        var skillPage = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillCollectionPage>(
+            pageLink.Href, ct);
+        Assert.NotNull(skillPage);
+        var item = Assert.Single(skillPage.Items, i => i.Name == skillName);
+        Assert.Equal("1.0.0", item.LatestVersion);
+        Assert.Equal($"/manifest/skills/{skillName}/index.json", item.Href);
+
+        var identity = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillIdentityIndex>(
+            item.Href, ct);
+        Assert.NotNull(identity);
+        Assert.Equal(skillName, identity.Name);
+        var versionLink = Assert.Single(identity.Versions, v => v.Version == "1.0.0");
+
+        var detail = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillVersionDetail>(
+            versionLink.Href, ct);
+        Assert.NotNull(detail);
+        Assert.Equal("skill-version", detail.Kind);
+        Assert.NotNull(detail.RoutesToSubagent);
+        Assert.Equal("technical-support-diagnostician", detail.RoutesToSubagent!.Name);
+        Assert.Equal("/manifest/subagents/technical-support-diagnostician/index.json", detail.RoutesToSubagent.Href);
+
+        var rfcIndex = await _fixture.Client.GetRfcIndexAsync(ct);
+        Assert.NotNull(rfcIndex);
+        var rfcSkill = Assert.Single(rfcIndex.Skills, s => s.Name == skillName);
+        Assert.Equal(rfcSkill.Name, detail.Artifact.Name);
+        Assert.Equal(rfcSkill.Version, detail.Artifact.Version);
+        Assert.Equal(rfcSkill.Type, detail.Artifact.Type);
+        Assert.Equal(rfcSkill.Description, detail.Artifact.Description);
+        Assert.Equal(rfcSkill.Url, detail.Artifact.Url);
+        Assert.Equal(rfcSkill.Digest, detail.Artifact.Digest);
+    }
+
+    [Fact]
     public async Task GetBlob_ByDigest()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -708,6 +780,13 @@ public sealed class SkillServerIntegrationTests
 
         var archiveBytes = await archiveResponse.Content.ReadAsByteArrayAsync(ct);
         Assert.Equal(indexSkill.Digest, ComputeSha256Digest(archiveBytes));
+
+        var nativeDetail = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillVersionDetail>(
+            $"/manifest/skills/{skillName}/versions/1.0.0.json", ct);
+        Assert.NotNull(nativeDetail);
+        Assert.Equal(indexSkill.Type, nativeDetail.Artifact.Type);
+        Assert.Equal(indexSkill.Url, nativeDetail.Artifact.Url);
+        Assert.Equal(indexSkill.Digest, nativeDetail.Artifact.Digest);
 
         using var archiveStream = new MemoryStream(archiveBytes);
         using var archive = new ZipArchive(archiveStream, ZipArchiveMode.Read);

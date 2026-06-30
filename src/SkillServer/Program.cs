@@ -25,6 +25,7 @@ builder.Services.AddSingleton<BlobStorage>();
 builder.Services.AddSingleton<SkillRepository>();
 builder.Services.AddSingleton<ApiKeyRepository>();
 builder.Services.AddSingleton<IndexGenerator>();
+builder.Services.AddSingleton<NativeManifestGenerator>();
 builder.Services.AddSingleton<SkillUploadService>();
 builder.Services.AddSingleton<SkillArchiveBackfillService>();
 builder.Services.AddSingleton<ApiKeyService>();

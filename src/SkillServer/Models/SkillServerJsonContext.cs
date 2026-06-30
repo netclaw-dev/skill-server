@@ -27,6 +27,11 @@ namespace SkillServer.Models;
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateRequestItem>))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateResponseItem>))]
 [JsonSerializable(typeof(HealthResponse))]
+[JsonSerializable(typeof(NativeRootManifest))]
+[JsonSerializable(typeof(NativeSkillCollectionIndex))]
+[JsonSerializable(typeof(NativeSkillCollectionPage))]
+[JsonSerializable(typeof(NativeSkillIdentityIndex))]
+[JsonSerializable(typeof(NativeSkillVersionDetail))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]

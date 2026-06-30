@@ -101,6 +101,7 @@ public sealed class SkillRepository
                    size_bytes AS SizeBytes,
                    COALESCE(artifact_sha256, sha256) AS ArtifactSha256,
                    COALESCE(artifact_size_bytes, size_bytes) AS ArtifactSizeBytes,
+                   routes_to_subagent AS RoutesToSubagent,
                    published_at AS PublishedAt, is_latest AS IsLatest
             FROM skill_versions
             WHERE skill_id = @skillId AND is_latest = 1
@@ -118,6 +119,7 @@ public sealed class SkillRepository
                    size_bytes AS SizeBytes,
                    COALESCE(artifact_sha256, sha256) AS ArtifactSha256,
                    COALESCE(artifact_size_bytes, size_bytes) AS ArtifactSizeBytes,
+                   routes_to_subagent AS RoutesToSubagent,
                    published_at AS PublishedAt, is_latest AS IsLatest
             FROM skill_versions
             WHERE skill_id = @skillId AND version = @version
@@ -135,6 +137,7 @@ public sealed class SkillRepository
                    size_bytes AS SizeBytes,
                    COALESCE(artifact_sha256, sha256) AS ArtifactSha256,
                    COALESCE(artifact_size_bytes, size_bytes) AS ArtifactSizeBytes,
+                   routes_to_subagent AS RoutesToSubagent,
                    published_at AS PublishedAt, is_latest AS IsLatest
             FROM skill_versions
             WHERE skill_id = @skillId
@@ -154,6 +157,7 @@ public sealed class SkillRepository
                    sv.size_bytes AS SizeBytes,
                    COALESCE(sv.artifact_sha256, sv.sha256) AS ArtifactSha256,
                    COALESCE(sv.artifact_size_bytes, sv.size_bytes) AS ArtifactSizeBytes,
+                   sv.routes_to_subagent AS RoutesToSubagent,
                    sv.published_at AS PublishedAt, sv.is_latest AS IsLatest
             FROM skill_versions sv
             WHERE sv.skill_type != @archiveType
@@ -174,6 +178,7 @@ public sealed class SkillRepository
                    sv.size_bytes AS SizeBytes,
                    COALESCE(sv.artifact_sha256, sv.sha256) AS ArtifactSha256,
                    COALESCE(sv.artifact_size_bytes, sv.size_bytes) AS ArtifactSizeBytes,
+                   sv.routes_to_subagent AS RoutesToSubagent,
                    sv.published_at AS PublishedAt, sv.is_latest AS IsLatest,
                    (SELECT COUNT(*) FROM skill_files sf WHERE sf.skill_version_id = sv.id) AS FileCount
             FROM skill_versions sv
@@ -197,6 +202,7 @@ public sealed class SkillRepository
                    sv.size_bytes AS SizeBytes,
                    COALESCE(sv.artifact_sha256, sv.sha256) AS ArtifactSha256,
                    COALESCE(sv.artifact_size_bytes, sv.size_bytes) AS ArtifactSizeBytes,
+                   sv.routes_to_subagent AS RoutesToSubagent,
                    sv.published_at AS PublishedAt, sv.is_latest AS IsLatest,
                    s.name AS SkillName, s.created_at AS SkillCreatedAt, s.updated_at AS SkillUpdatedAt,
                    (SELECT COUNT(*) FROM skill_versions sv2 WHERE sv2.skill_id = s.id) AS VersionCount
@@ -233,7 +239,8 @@ public sealed class SkillRepository
         long sizeBytes,
         CancellationToken ct = default,
         string? artifactSha256 = null,
-        long? artifactSizeBytes = null)
+        long? artifactSizeBytes = null,
+        string? routesToSubagent = null)
     {
         await using var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync(ct);
@@ -252,8 +259,8 @@ public sealed class SkillRepository
 
             var versionId = await connection.ExecuteScalarAsync<long>(
                 """
-                INSERT INTO skill_versions (skill_id, version, description, category, skill_type, sha256, size_bytes, artifact_sha256, artifact_size_bytes, published_at, is_latest)
-                VALUES (@skillId, @version, @description, @category, @typeString, @sha256, @sizeBytes, @artifactSha256, @artifactSizeBytes, @now, 1);
+                INSERT INTO skill_versions (skill_id, version, description, category, skill_type, sha256, size_bytes, artifact_sha256, artifact_size_bytes, routes_to_subagent, published_at, is_latest)
+                VALUES (@skillId, @version, @description, @category, @typeString, @sha256, @sizeBytes, @artifactSha256, @artifactSizeBytes, @routesToSubagent, @now, 1);
                 SELECT last_insert_rowid();
                 """,
                 new
@@ -267,6 +274,7 @@ public sealed class SkillRepository
                     sizeBytes,
                     artifactSha256 = artifactSha256 ?? sha256,
                     artifactSizeBytes = artifactSizeBytes ?? sizeBytes,
+                    routesToSubagent,
                     now
                 },
                 transaction);
@@ -346,6 +354,7 @@ public sealed class SkillRepository
                    sv.size_bytes AS SizeBytes,
                    COALESCE(sv.artifact_sha256, sv.sha256) AS ArtifactSha256,
                    COALESCE(sv.artifact_size_bytes, sv.size_bytes) AS ArtifactSizeBytes,
+                   sv.routes_to_subagent AS RoutesToSubagent,
                    sv.published_at AS PublishedAt, sv.is_latest AS IsLatest,
                    s.name AS SkillName, s.created_at AS SkillCreatedAt, s.updated_at AS SkillUpdatedAt,
                    (SELECT COUNT(*) FROM skill_versions sv2 WHERE sv2.skill_id = s.id) AS VersionCount
@@ -383,6 +392,7 @@ public sealed class SkillRepository
                    sv.size_bytes AS SizeBytes,
                    COALESCE(sv.artifact_sha256, sv.sha256) AS ArtifactSha256,
                    COALESCE(sv.artifact_size_bytes, sv.size_bytes) AS ArtifactSizeBytes,
+                   sv.routes_to_subagent AS RoutesToSubagent,
                    sv.published_at AS PublishedAt, sv.is_latest AS IsLatest,
                    (SELECT COUNT(*) FROM skill_files sf WHERE sf.skill_version_id = sv.id) AS FileCount
             FROM skill_versions sv
