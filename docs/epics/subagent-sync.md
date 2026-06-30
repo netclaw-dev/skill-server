@@ -33,6 +33,7 @@ NetClaw already has a sub-agent format and skill-to-sub-agent routing through `m
 - The native manifest uses linked path-based pagination instead of query-string cursor contracts.
 - CLI tooling can validate sub-agent definitions before publication.
 - Sync is safe: digest-verified, failure-tolerant, and non-destructive to user-authored local files.
+- Sync destinations are client-controlled; the server manifest never prescribes local filesystem paths.
 
 ## Non-Goals
 
@@ -356,6 +357,7 @@ Tasks:
 - [ ] Sync sub-agent `agent-md` artifacts into a managed server-feed location.
 - [ ] Track sub-agent sync state by feed, name, version, and digest.
 - [ ] Preserve user-authored local sub-agent files.
+- [ ] Keep local sync destinations client-configurable or clearly scoped to the NetClaw home directory.
 - [ ] Ensure skill `metadata.subagent` targets resolve after sync.
 
 Acceptance criteria:

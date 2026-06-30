@@ -200,6 +200,19 @@ Native clients should:
 
 Clients must ignore unsupported resource kinds and unknown fields.
 
+## Client-Controlled Destinations
+
+The native manifest describes what artifacts exist and where to download them. It does not prescribe where a client must install them.
+
+Each client owns its local sync policy:
+
+- NetClaw may install server-synced skills and sub-agents under managed directories inside its configured home directory.
+- A non-NetClaw client may sync the same artifacts into its own skills, commands, agents, plugins, or cache directories.
+- A client may expose configuration for per-feed destination roots, per-resource-kind destination roots, or both.
+- A client must keep enough local state to avoid overwriting user-authored files and to prune only artifacts it previously synced from that feed.
+
+Manifest `url`, `digest`, `name`, `version`, `kind`, and `type` fields are portable. Local filesystem layout is intentionally out of scope for the server protocol.
+
 ## Authentication
 
 Read access may be open for public registries. Private registries may require the same bearer API key already used by SkillServer write endpoints and NetClaw feed configuration.

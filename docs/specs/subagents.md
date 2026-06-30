@@ -148,13 +148,17 @@ Sub-agent validation should reject:
 
 Validation should warn, not fail, for unknown fields.
 
-## Install Location
+## Client Install Location
+
+SkillServer does not define where sub-agent artifacts are installed after download. It publishes versioned `agent-md` artifacts and native manifest metadata; each client maps those artifacts into its own local configuration model.
 
 NetClaw sync should install downloaded sub-agent definitions into a managed server-feed subdirectory under the NetClaw agents area rather than overwriting user-authored files directly.
 
-The exact local path is a NetClaw implementation detail, but it should preserve these properties:
+The exact local path is a NetClaw implementation detail, not a SkillServer protocol requirement. NetClaw's layout should preserve these properties:
 
 - User-authored `~/.netclaw/agents/*.md` files remain editable.
 - Server-synced files are removable when the feed no longer advertises them.
 - Duplicate names resolve deterministically with loud diagnostics.
 - Sync state records version, digest, and source feed.
+
+Non-NetClaw clients can use the same server artifacts by configuring their own sync destination. They should preserve equivalent ownership boundaries between user-authored files and server-synced files.
