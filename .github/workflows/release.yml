@@ -95,11 +95,10 @@ jobs:
     - name: "Set version"
       shell: bash
       run: |
-        VERSION=${{ github.ref_name }}
-        VERSION=${VERSION#v}
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        ASSEMBLY_VERSION=$(echo $VERSION | cut -d'-' -f1)
-        echo "ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_ENV
+        VERSION=${GITHUB_REF_NAME#v}
+        echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+        ASSEMBLY_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
+        echo "ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> "$GITHUB_ENV"
 
     - name: "Publish CLI"
       shell: bash
@@ -118,7 +117,8 @@ jobs:
       if: matrix.rid != 'linux-arm64'
       shell: bash
       run: |
-        if [[ "${{ matrix.rid }}" == win-* ]]; then
+        RID="${{ matrix.rid }}"
+        if [[ "$RID" == win-* ]]; then
           ./publish/skillserver.exe --version
           ./publish/skillserver.exe --help
         else
@@ -131,10 +131,10 @@ jobs:
       shell: bash
       run: |
         cd publish
-        tar -czf ../skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz *
+        tar -czf "../skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz" ./*
         cd ..
-        sha256sum skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz \
-          > skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz.sha256
+        sha256sum "skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz" \
+          > "skillserver-${{ env.VERSION }}-${{ matrix.rid }}.tar.gz.sha256"
 
     - name: "Package (zip)"
       if: matrix.archive == 'zip'
@@ -247,18 +247,28 @@ jobs:
         echo "${{ secrets.GITHUB_TOKEN }}" | \
           docker login ${{ env.CONTAINER_REGISTRY }} -u ${{ github.actor }} --password-stdin
 
+        IS_PRERELEASE=false
+        if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+          IS_PRERELEASE=true
+        fi
+
         docker manifest create \
           ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }} \
           ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-x64 \
           ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-arm64
 
-        docker manifest create \
-          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:latest \
-          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-x64 \
-          ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-arm64
-
         docker manifest push ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}
-        docker manifest push ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:latest
+
+        if [[ "$IS_PRERELEASE" == "false" ]]; then
+          docker manifest create \
+            ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:latest \
+            ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-x64 \
+            ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:${{ github.ref_name }}-arm64
+
+          docker manifest push ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE }}:latest
+        else
+          echo "Skipping latest container tag for prerelease ${{ github.ref_name }}"
+        fi
 
     - name: "Extract release notes"
       shell: pwsh
@@ -272,8 +282,14 @@ jobs:
 
     - name: "Create GitHub Release"
       run: |
+        PRERELEASE_FLAG=""
+        if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+          PRERELEASE_FLAG="--prerelease"
+        fi
+
         gh release create "${{ github.ref_name }}" \
           --title "SkillServer ${{ github.ref_name }}" \
+          $PRERELEASE_FLAG \
           --notes-file RELEASE_NOTES_LATEST.md \
           nuget/*.nupkg nuget/*.snupkg cli/*
       env:
