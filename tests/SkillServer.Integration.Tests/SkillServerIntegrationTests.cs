@@ -169,6 +169,7 @@ public sealed class SkillServerIntegrationTests
         Assert.Equal("/manifest.json", root.Links.Self.Href);
         Assert.Equal("/.well-known/agent-skills/index.json", root.Links.RfcSkills.Href);
         Assert.Equal("/manifest/skills/index.json", root.Links.Skills.Href);
+        Assert.Equal("/manifest/subagents/index.json", root.Links.SubAgents.Href);
 
         var skillIndex = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillCollectionIndex>(
             root.Links.Skills.Href, ct);
@@ -266,6 +267,74 @@ public sealed class SkillServerIntegrationTests
         var artifactBytes = await artifactResponse.Content.ReadAsByteArrayAsync(ct);
         Assert.Equal(upload.Sha256, ComputeSha256Digest(artifactBytes));
         Assert.Contains("technical support diagnostician", Encoding.UTF8.GetString(artifactBytes));
+
+        var rfcIndex = await _fixture.Client.GetRfcIndexAsync(ct);
+        Assert.NotNull(rfcIndex);
+        Assert.DoesNotContain(rfcIndex.Skills, s => s.Name == subAgentName);
+    }
+
+    [Fact]
+    public async Task NativeManifest_SubAgentTraversal_ReturnsAgentArtifactValues()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var subAgentName = $"manifest-agent-{Guid.NewGuid():N}"[..20];
+
+        var agentMd = $"""
+            ---
+            name: {subAgentName}
+            description: Native manifest sub-agent test.
+            modelRole: Compaction
+            timeoutSeconds: 90
+            visibility: user-facing
+            ---
+
+            You are a manifest-tested sub-agent.
+            """;
+
+        using var content = CreateSubAgentUpload(subAgentName, "1.0.0", agentMd);
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/subagents", content, ct);
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var root = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeRootManifest>("/manifest.json", ct);
+        Assert.NotNull(root);
+        Assert.Equal("/manifest/subagents/index.json", root.Links.SubAgents.Href);
+
+        var subAgentIndex = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSubAgentCollectionIndex>(
+            root.Links.SubAgents.Href, ct);
+        Assert.NotNull(subAgentIndex);
+        Assert.Equal("subagent-index", subAgentIndex.Kind);
+        var pageLink = Assert.Single(subAgentIndex.Pages);
+
+        var subAgentPage = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSubAgentCollectionPage>(
+            pageLink.Href, ct);
+        Assert.NotNull(subAgentPage);
+        Assert.Equal("subagent-page", subAgentPage.Kind);
+        var item = Assert.Single(subAgentPage.Items, i => i.Name == subAgentName);
+        Assert.Equal("1.0.0", item.LatestVersion);
+        Assert.Equal($"/manifest/subagents/{subAgentName}/index.json", item.Href);
+
+        var identity = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSubAgentIdentityIndex>(
+            item.Href, ct);
+        Assert.NotNull(identity);
+        Assert.Equal("subagent", identity.Kind);
+        Assert.Equal(subAgentName, identity.Name);
+        var versionLink = Assert.Single(identity.Versions, v => v.Version == "1.0.0");
+
+        var detail = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSubAgentVersionDetail>(
+            versionLink.Href, ct);
+        Assert.NotNull(detail);
+        Assert.Equal("subagent-version", detail.Kind);
+        Assert.Equal(subAgentName, detail.Name);
+        Assert.Equal("1.0.0", detail.Version);
+        Assert.Equal("agent-md", detail.Type);
+        Assert.Equal("Native manifest sub-agent test.", detail.Description);
+        Assert.EndsWith($"/subagents/{subAgentName}/1.0.0/agent.md", detail.Url, StringComparison.Ordinal);
+
+        var artifactResponse = await _fixture.HttpClient.GetAsync($"/subagents/{subAgentName}/1.0.0/agent.md", ct);
+        Assert.Equal(HttpStatusCode.OK, artifactResponse.StatusCode);
+        var artifactBytes = await artifactResponse.Content.ReadAsByteArrayAsync(ct);
+        Assert.Equal(detail.Digest, ComputeSha256Digest(artifactBytes));
+        Assert.Equal(detail.Digest, versionLink.Digest);
 
         var rfcIndex = await _fixture.Client.GetRfcIndexAsync(ct);
         Assert.NotNull(rfcIndex);

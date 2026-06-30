@@ -37,6 +37,10 @@ namespace SkillServer.Models;
 [JsonSerializable(typeof(NativeSkillCollectionPage))]
 [JsonSerializable(typeof(NativeSkillIdentityIndex))]
 [JsonSerializable(typeof(NativeSkillVersionDetail))]
+[JsonSerializable(typeof(NativeSubAgentCollectionIndex))]
+[JsonSerializable(typeof(NativeSubAgentCollectionPage))]
+[JsonSerializable(typeof(NativeSubAgentIdentityIndex))]
+[JsonSerializable(typeof(NativeSubAgentVersionDetail))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]

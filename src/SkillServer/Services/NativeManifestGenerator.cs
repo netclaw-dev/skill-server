@@ -11,13 +11,19 @@ namespace SkillServer.Services;
 public sealed class NativeManifestGenerator
 {
     private const string SkillsPageRange = "all";
+    private const string SubAgentsPageRange = "all";
 
-    private readonly SkillRepository _repository;
+    private readonly SkillRepository _skillRepository;
+    private readonly SubAgentRepository _subAgentRepository;
     private readonly IConfiguration _configuration;
 
-    public NativeManifestGenerator(SkillRepository repository, IConfiguration configuration)
+    public NativeManifestGenerator(
+        SkillRepository skillRepository,
+        SubAgentRepository subAgentRepository,
+        IConfiguration configuration)
     {
-        _repository = repository;
+        _skillRepository = skillRepository;
+        _subAgentRepository = subAgentRepository;
         _configuration = configuration;
     }
 
@@ -30,7 +36,8 @@ public sealed class NativeManifestGenerator
             {
                 Self = Link("/manifest.json"),
                 RfcSkills = Link("/.well-known/agent-skills/index.json"),
-                Skills = Link("/manifest/skills/index.json")
+                Skills = Link("/manifest/skills/index.json"),
+                SubAgents = Link("/manifest/subagents/index.json")
             }
         };
 
@@ -57,12 +64,12 @@ public sealed class NativeManifestGenerator
         if (!page.Equals(SkillsPageRange, StringComparison.OrdinalIgnoreCase))
             return null;
 
-        var latestVersions = await _repository.GetAllLatestVersionsWithMetadataAsync(ct: ct);
+        var latestVersions = await _skillRepository.GetAllLatestVersionsWithMetadataAsync(ct: ct);
         var items = new List<NativeSkillPageItem>(latestVersions.Count);
 
         foreach (var latest in latestVersions)
         {
-            var versions = await _repository.GetAllVersionsAsync(latest.SkillId, ct);
+            var versions = await _skillRepository.GetAllVersionsAsync(latest.SkillId, ct);
             if (versions.Count == 0)
                 continue;
 
@@ -91,11 +98,11 @@ public sealed class NativeManifestGenerator
 
     public async Task<NativeSkillIdentityIndex?> GenerateSkillIdentityAsync(string skillName, CancellationToken ct = default)
     {
-        var skill = await _repository.GetSkillByNameAsync(skillName, ct);
+        var skill = await _skillRepository.GetSkillByNameAsync(skillName, ct);
         if (skill is null)
             return null;
 
-        var versions = await _repository.GetAllVersionsAsync(skill.Id, ct);
+        var versions = await _skillRepository.GetAllVersionsAsync(skill.Id, ct);
         if (versions.Count == 0)
             return null;
 
@@ -117,11 +124,11 @@ public sealed class NativeManifestGenerator
 
     public async Task<NativeSkillVersionDetail?> GenerateSkillVersionAsync(string skillName, string version, CancellationToken ct = default)
     {
-        var skill = await _repository.GetSkillByNameAsync(skillName, ct);
+        var skill = await _skillRepository.GetSkillByNameAsync(skillName, ct);
         if (skill is null)
             return null;
 
-        var skillVersion = await _repository.GetVersionAsync(skill.Id, version, ct);
+        var skillVersion = await _skillRepository.GetVersionAsync(skill.Id, version, ct);
         if (skillVersion is null)
             return null;
 
@@ -136,6 +143,106 @@ public sealed class NativeManifestGenerator
                     Href = $"/manifest/subagents/{skillVersion.RoutesToSubagent}/index.json"
                 },
             Links = SelfLinks($"/manifest/skills/{skill.Name}/versions/{skillVersion.Version}.json")
+        };
+    }
+
+    public Task<NativeSubAgentCollectionIndex> GenerateSubAgentIndexAsync(CancellationToken ct = default)
+    {
+        var index = new NativeSubAgentCollectionIndex
+        {
+            Links = SelfLinks("/manifest/subagents/index.json"),
+            Pages = [new NativeManifestPageLink
+            {
+                Range = SubAgentsPageRange,
+                Href = "/manifest/subagents/pages/all.json"
+            }]
+        };
+
+        return Task.FromResult(index);
+    }
+
+    public async Task<NativeSubAgentCollectionPage?> GenerateSubAgentPageAsync(string page, CancellationToken ct = default)
+    {
+        if (!page.Equals(SubAgentsPageRange, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var latestVersions = await _subAgentRepository.GetAllLatestVersionsWithMetadataAsync(ct);
+        var items = new List<NativeSubAgentPageItem>(latestVersions.Count);
+
+        foreach (var latest in latestVersions)
+        {
+            var versions = await _subAgentRepository.GetAllVersionsAsync(latest.SubAgentId, ct);
+            if (versions.Count == 0)
+                continue;
+
+            var oldest = versions[^1];
+            items.Add(new NativeSubAgentPageItem
+            {
+                Name = latest.SubAgentName,
+                LatestVersion = latest.Version,
+                VersionRange = new NativeVersionRange
+                {
+                    Min = oldest.Version,
+                    Max = latest.Version,
+                    Count = versions.Count
+                },
+                Href = $"/manifest/subagents/{latest.SubAgentName}/index.json"
+            });
+        }
+
+        return new NativeSubAgentCollectionPage
+        {
+            Range = SubAgentsPageRange,
+            Items = items,
+            Links = SelfLinks("/manifest/subagents/pages/all.json")
+        };
+    }
+
+    public async Task<NativeSubAgentIdentityIndex?> GenerateSubAgentIdentityAsync(string subAgentName, CancellationToken ct = default)
+    {
+        var subAgent = await _subAgentRepository.GetSubAgentByNameAsync(subAgentName, ct);
+        if (subAgent is null)
+            return null;
+
+        var versions = await _subAgentRepository.GetAllVersionsAsync(subAgent.Id, ct);
+        if (versions.Count == 0)
+            return null;
+
+        var latest = versions.FirstOrDefault(v => v.IsLatest) ?? versions[0];
+        return new NativeSubAgentIdentityIndex
+        {
+            Name = subAgent.Name,
+            LatestVersion = latest.Version,
+            Versions = versions.Select(v => new NativeSubAgentVersionLink
+            {
+                Version = v.Version,
+                PublishedAt = v.PublishedAt,
+                Digest = Sha256Digest.Create(v.Sha256).Value,
+                Href = $"/manifest/subagents/{subAgent.Name}/versions/{v.Version}.json"
+            }).ToList(),
+            Links = SelfLinks($"/manifest/subagents/{subAgent.Name}/index.json")
+        };
+    }
+
+    public async Task<NativeSubAgentVersionDetail?> GenerateSubAgentVersionAsync(string subAgentName, string version, CancellationToken ct = default)
+    {
+        var subAgent = await _subAgentRepository.GetSubAgentByNameAsync(subAgentName, ct);
+        if (subAgent is null)
+            return null;
+
+        var subAgentVersion = await _subAgentRepository.GetVersionAsync(subAgent.Id, version, ct);
+        if (subAgentVersion is null)
+            return null;
+
+        var baseUrl = GetBaseUrl();
+        return new NativeSubAgentVersionDetail
+        {
+            Name = subAgent.Name,
+            Version = subAgentVersion.Version,
+            Description = subAgentVersion.Description,
+            Url = $"{baseUrl}/subagents/{subAgent.Name}/{subAgentVersion.Version}/agent.md",
+            Digest = Sha256Digest.Create(subAgentVersion.Sha256).Value,
+            Links = SelfLinks($"/manifest/subagents/{subAgent.Name}/versions/{subAgentVersion.Version}.json")
         };
     }
 

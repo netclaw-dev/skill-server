@@ -29,6 +29,9 @@ public sealed record NativeRootManifestLinks
 
     [JsonPropertyName("skills")]
     public required NativeManifestLink Skills { get; init; }
+
+    [JsonPropertyName("subagents")]
+    public required NativeManifestLink SubAgents { get; init; }
 }
 
 public sealed record NativeRootManifest
@@ -64,6 +67,18 @@ public sealed record NativeSkillCollectionIndex
     public required IReadOnlyList<NativeManifestPageLink> Pages { get; init; }
 }
 
+public sealed record NativeSubAgentCollectionIndex
+{
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = "subagent-index";
+
+    [JsonPropertyName("links")]
+    public required NativeManifestSelfLinks Links { get; init; }
+
+    [JsonPropertyName("pages")]
+    public required IReadOnlyList<NativeManifestPageLink> Pages { get; init; }
+}
+
 public sealed record NativeVersionRange
 {
     [JsonPropertyName("min")]
@@ -77,6 +92,21 @@ public sealed record NativeVersionRange
 }
 
 public sealed record NativeSkillPageItem
+{
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+
+    [JsonPropertyName("latestVersion")]
+    public required string LatestVersion { get; init; }
+
+    [JsonPropertyName("versionRange")]
+    public required NativeVersionRange VersionRange { get; init; }
+
+    [JsonPropertyName("href")]
+    public required string Href { get; init; }
+}
+
+public sealed record NativeSubAgentPageItem
 {
     [JsonPropertyName("name")]
     public required string Name { get; init; }
@@ -106,7 +136,37 @@ public sealed record NativeSkillCollectionPage
     public required NativeManifestSelfLinks Links { get; init; }
 }
 
+public sealed record NativeSubAgentCollectionPage
+{
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = "subagent-page";
+
+    [JsonPropertyName("range")]
+    public required string Range { get; init; }
+
+    [JsonPropertyName("items")]
+    public required IReadOnlyList<NativeSubAgentPageItem> Items { get; init; }
+
+    [JsonPropertyName("links")]
+    public required NativeManifestSelfLinks Links { get; init; }
+}
+
 public sealed record NativeSkillVersionLink
+{
+    [JsonPropertyName("version")]
+    public required string Version { get; init; }
+
+    [JsonPropertyName("publishedAt")]
+    public required DateTimeOffset PublishedAt { get; init; }
+
+    [JsonPropertyName("digest")]
+    public required string Digest { get; init; }
+
+    [JsonPropertyName("href")]
+    public required string Href { get; init; }
+}
+
+public sealed record NativeSubAgentVersionLink
 {
     [JsonPropertyName("version")]
     public required string Version { get; init; }
@@ -134,6 +194,24 @@ public sealed record NativeSkillIdentityIndex
 
     [JsonPropertyName("versions")]
     public required IReadOnlyList<NativeSkillVersionLink> Versions { get; init; }
+
+    [JsonPropertyName("links")]
+    public required NativeManifestSelfLinks Links { get; init; }
+}
+
+public sealed record NativeSubAgentIdentityIndex
+{
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = "subagent";
+
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+
+    [JsonPropertyName("latestVersion")]
+    public required string LatestVersion { get; init; }
+
+    [JsonPropertyName("versions")]
+    public required IReadOnlyList<NativeSubAgentVersionLink> Versions { get; init; }
 
     [JsonPropertyName("links")]
     public required NativeManifestSelfLinks Links { get; init; }
@@ -179,6 +257,33 @@ public sealed record NativeSkillVersionDetail
 
     [JsonPropertyName("routesToSubagent")]
     public NativeSubagentRoute? RoutesToSubagent { get; init; }
+
+    [JsonPropertyName("links")]
+    public required NativeManifestSelfLinks Links { get; init; }
+}
+
+public sealed record NativeSubAgentVersionDetail
+{
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = "subagent-version";
+
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+
+    [JsonPropertyName("version")]
+    public required string Version { get; init; }
+
+    [JsonPropertyName("type")]
+    public string Type { get; init; } = SubAgentTypes.AgentMd;
+
+    [JsonPropertyName("description")]
+    public required string Description { get; init; }
+
+    [JsonPropertyName("url")]
+    public required string Url { get; init; }
+
+    [JsonPropertyName("digest")]
+    public required string Digest { get; init; }
 
     [JsonPropertyName("links")]
     public required NativeManifestSelfLinks Links { get; init; }

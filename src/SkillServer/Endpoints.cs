@@ -88,6 +88,48 @@ public static class Endpoints
                 ? Results.NotFound()
                 : Results.Json(skillVersion, SkillServerJsonContext.Default.NativeSkillVersionDetail);
         });
+
+        manifest.MapGet("/subagents/index.json", async (
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var index = await manifestGenerator.GenerateSubAgentIndexAsync(ct);
+            return Results.Json(index, SkillServerJsonContext.Default.NativeSubAgentCollectionIndex);
+        });
+
+        manifest.MapGet("/subagents/pages/{page}.json", async (
+            string page,
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var subAgentPage = await manifestGenerator.GenerateSubAgentPageAsync(page, ct);
+            return subAgentPage is null
+                ? Results.NotFound()
+                : Results.Json(subAgentPage, SkillServerJsonContext.Default.NativeSubAgentCollectionPage);
+        });
+
+        manifest.MapGet("/subagents/{subAgentName}/index.json", async (
+            string subAgentName,
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var subAgent = await manifestGenerator.GenerateSubAgentIdentityAsync(subAgentName, ct);
+            return subAgent is null
+                ? Results.NotFound()
+                : Results.Json(subAgent, SkillServerJsonContext.Default.NativeSubAgentIdentityIndex);
+        });
+
+        manifest.MapGet("/subagents/{subAgentName}/versions/{version}.json", async (
+            string subAgentName,
+            string version,
+            NativeManifestGenerator manifestGenerator,
+            CancellationToken ct) =>
+        {
+            var subAgentVersion = await manifestGenerator.GenerateSubAgentVersionAsync(subAgentName, version, ct);
+            return subAgentVersion is null
+                ? Results.NotFound()
+                : Results.Json(subAgentVersion, SkillServerJsonContext.Default.NativeSubAgentVersionDetail);
+        });
     }
 
     private static void MapSkillEndpoints(this WebApplication app)
