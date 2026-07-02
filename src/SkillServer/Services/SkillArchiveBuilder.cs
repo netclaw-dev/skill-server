@@ -12,7 +12,7 @@ internal static class SkillArchiveBuilder
 {
     private const int RegularFileType = 0x8000;
     private const int DefaultFileMode = 0x1A4; // 0644
-    private const int PermissionBitsMask = 0xFFF;
+    internal const int PermissionBitsMask = 0x1FF;
     private static readonly DateTimeOffset FixedTimestamp = new(1980, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     public static byte[] BuildZip(
@@ -45,9 +45,15 @@ internal static class SkillArchiveBuilder
 
     internal static int ToZipExternalAttributes(int? unixMode)
     {
-        var mode = (unixMode ?? DefaultFileMode) & PermissionBitsMask;
+        var mode = NormalizeUnixMode(unixMode);
         return unchecked((int)((RegularFileType | mode) << 16));
     }
+
+    internal static bool IsSafeUnixMode(int unixMode)
+        => unixMode >= 0 && (unixMode & ~PermissionBitsMask) == 0;
+
+    internal static int NormalizeUnixMode(int? unixMode)
+        => (unixMode ?? DefaultFileMode) & PermissionBitsMask;
 }
 
 internal readonly record struct SkillArchiveResource(ResourcePath Path, byte[] Content, int? UnixMode);

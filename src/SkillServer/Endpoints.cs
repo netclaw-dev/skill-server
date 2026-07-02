@@ -368,6 +368,7 @@ public static class Endpoints
 
         var resourceFiles = request.Form.Files.GetFiles("resources");
         var resources = new List<SkillResourceUpload>();
+        var resourcePaths = new HashSet<string>(StringComparer.Ordinal);
         try
         {
             foreach (var resourceFile in resourceFiles)
@@ -381,8 +382,20 @@ public static class Endpoints
                     });
                 }
 
-                resourceMetadata.TryGetValue(resourcePath.Value.Value, out var unixMode);
+                var resourcePathValue = resourcePath.Value.Value;
+                resourcePaths.Add(resourcePathValue);
+                resourceMetadata.TryGetValue(resourcePathValue, out var unixMode);
                 resources.Add(new SkillResourceUpload(resourcePath.Value, resourceFile.OpenReadStream(), unixMode));
+            }
+
+            var unmatchedMetadataPath = resourceMetadata.Keys.FirstOrDefault(path => !resourcePaths.Contains(path));
+            if (unmatchedMetadataPath is not null)
+            {
+                return Results.BadRequest(new ErrorResponse
+                {
+                    Error = "invalid_resource_metadata",
+                    Message = $"Resource metadata path '{unmatchedMetadataPath}' does not match any uploaded resource."
+                });
             }
 
             await using var stream = file.OpenReadStream();
@@ -442,12 +455,12 @@ public static class Endpoints
                 return false;
             }
 
-            if (entry.UnixMode is < 0 or > 0xFFF)
+            if (entry.UnixMode is { } unixMode && !SkillArchiveBuilder.IsSafeUnixMode(unixMode))
             {
                 error = new ErrorResponse
                 {
                     Error = "invalid_resource_metadata",
-                    Message = $"Invalid unixMode for resource '{entry.Path}'. Must be between 0 and 4095."
+                    Message = $"Invalid unixMode for resource '{entry.Path}'. Must contain only standard permission bits between 0 and 511."
                 };
                 return false;
             }

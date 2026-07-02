@@ -1107,6 +1107,80 @@ public sealed class SkillServerIntegrationTests
         Assert.Equal(HttpStatusCode.BadRequest, uploadResponse.StatusCode);
     }
 
+    [Theory]
+    [InlineData("C:/temp/tool")]
+    [InlineData("C:\\temp\\tool")]
+    public async Task UploadSkillWithResources_WindowsDrivePath_ReturnsBadRequest(string path)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var skillName = $"drivepath-{Guid.NewGuid():N}"[..20];
+
+        using var content = CreateResourceUploadContent(skillName, path, "exploit");
+
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/skills", content, ct);
+        Assert.Equal(HttpStatusCode.BadRequest, uploadResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadSkillWithResources_DangerousUnixMode_ReturnsBadRequest()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var skillName = $"badmode-{Guid.NewGuid():N}"[..20];
+
+        using var content = CreateResourceUploadContent(skillName, "tools/check", "#!/bin/sh\necho ok\n");
+        var resourceMetadata = JsonSerializer.Serialize(new[]
+        {
+            new { path = "tools/check", unixMode = 0xFED }
+        });
+        content.Add(new StringContent(resourceMetadata, Encoding.UTF8, "application/json"), "resourceMetadata");
+
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/skills", content, ct);
+        Assert.Equal(HttpStatusCode.BadRequest, uploadResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadSkillWithResources_UnmatchedResourceMetadata_ReturnsBadRequest()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var skillName = $"badmetadata-{Guid.NewGuid():N}"[..20];
+
+        using var content = CreateResourceUploadContent(skillName, "tools/check", "#!/bin/sh\necho ok\n");
+        var resourceMetadata = JsonSerializer.Serialize(new[]
+        {
+            new { path = "tools/missing", unixMode = 0x1ED }
+        });
+        content.Add(new StringContent(resourceMetadata, Encoding.UTF8, "application/json"), "resourceMetadata");
+
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/skills", content, ct);
+        Assert.Equal(HttpStatusCode.BadRequest, uploadResponse.StatusCode);
+    }
+
     private static int GetUnixMode(ZipArchiveEntry entry)
-        => (entry.ExternalAttributes >> 16) & 0xFFF;
+        => (entry.ExternalAttributes >> 16) & 0x1FF;
+
+    private static MultipartFormDataContent CreateResourceUploadContent(string skillName, string resourcePath, string resourceContent)
+    {
+        var skillContent = $"""
+            ---
+            name: {skillName}
+            description: Testing resource validation
+            ---
+
+            # Resource Validation Test
+            """;
+
+        var content = new MultipartFormDataContent();
+        content.Add(new StringContent(skillName), "name");
+        content.Add(new StringContent("1.0.0"), "version");
+
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(skillContent));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/markdown");
+        content.Add(fileContent, "file", "SKILL.md");
+
+        var resourceFile = new ByteArrayContent(Encoding.UTF8.GetBytes(resourceContent));
+        resourceFile.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        content.Add(resourceFile, "resources", resourcePath);
+
+        return content;
+    }
 }

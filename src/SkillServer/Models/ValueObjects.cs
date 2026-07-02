@@ -155,13 +155,18 @@ public readonly record struct ResourcePath
         if (string.IsNullOrWhiteSpace(value))
             return false;
 
-        if (value.Contains("..") || value.StartsWith('/') || value.StartsWith('\\'))
-            return false;
-
         var normalized = value.Replace('\\', '/');
 
-        // Must be in a subdirectory — bare filenames at the root are not resources
-        if (!normalized.Contains('/') || normalized.IndexOf('/') == normalized.Length - 1)
+        if (normalized.StartsWith('/') || normalized.Contains(':') || normalized.Contains('\0'))
+            return false;
+
+        var segments = normalized.Split('/');
+
+        // Must be in a subdirectory — bare filenames at the root are not resources.
+        if (segments.Length < 2)
+            return false;
+
+        if (segments.Any(segment => segment.Length == 0 || segment is "." or ".."))
             return false;
 
         result = new ResourcePath(normalized);

@@ -113,6 +113,94 @@ public sealed class SkillDirectoryScannerTests : IDisposable
     }
 
     [Fact]
+    public void ScanDirectory_StripsSpecialUnixModeBits()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var skillDir = Path.Combine(_tempDir, "skill-with-special-mode");
+        Directory.CreateDirectory(skillDir);
+        File.WriteAllText(Path.Combine(skillDir, "SKILL.md"), """
+            ---
+            name: skill-with-special-mode
+            version: 1.0.0
+            description: Has special mode bits
+            ---
+            # Skill
+            """);
+
+        var binDir = Path.Combine(skillDir, "bin");
+        Directory.CreateDirectory(binDir);
+        var toolPath = Path.Combine(binDir, "tool");
+        File.WriteAllText(toolPath, "#!/bin/sh\necho ok\n");
+        File.SetUnixFileMode(toolPath,
+            UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+            UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+            UnixFileMode.OtherRead | UnixFileMode.OtherExecute |
+            UnixFileMode.SetUser | UnixFileMode.SetGroup | UnixFileMode.StickyBit);
+
+        var result = SkillDirectoryScanner.ScanDirectory(skillDir);
+
+        Assert.NotNull(result);
+        var resource = Assert.Single(result.Resources);
+        Assert.Equal("bin/tool", resource.RelativePath);
+        Assert.Equal(0x1ED, resource.UnixMode);
+    }
+
+    [Fact]
+    public void ScanDirectory_RejectsSymlinkResourceFiles()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var skillDir = Path.Combine(_tempDir, "skill-with-symlink-file");
+        Directory.CreateDirectory(skillDir);
+        File.WriteAllText(Path.Combine(skillDir, "SKILL.md"), """
+            ---
+            name: skill-with-symlink-file
+            version: 1.0.0
+            description: Has symlink resource
+            ---
+            # Skill
+            """);
+
+        var refDir = Path.Combine(skillDir, "references");
+        Directory.CreateDirectory(refDir);
+        var targetPath = Path.Combine(_tempDir, "outside.txt");
+        File.WriteAllText(targetPath, "outside");
+        File.CreateSymbolicLink(Path.Combine(refDir, "outside.txt"), targetPath);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => SkillDirectoryScanner.ScanDirectory(skillDir));
+        Assert.Contains("symbolic links or reparse points", ex.Message);
+    }
+
+    [Fact]
+    public void ScanDirectory_RejectsSymlinkResourceDirectories()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var skillDir = Path.Combine(_tempDir, "skill-with-symlink-dir");
+        Directory.CreateDirectory(skillDir);
+        File.WriteAllText(Path.Combine(skillDir, "SKILL.md"), """
+            ---
+            name: skill-with-symlink-dir
+            version: 1.0.0
+            description: Has symlink directory
+            ---
+            # Skill
+            """);
+
+        var outsideDir = Path.Combine(_tempDir, "outside-dir");
+        Directory.CreateDirectory(outsideDir);
+        File.WriteAllText(Path.Combine(outsideDir, "outside.txt"), "outside");
+        Directory.CreateSymbolicLink(Path.Combine(skillDir, "references"), outsideDir);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => SkillDirectoryScanner.ScanDirectory(skillDir));
+        Assert.Contains("symbolic links or reparse points", ex.Message);
+    }
+
+    [Fact]
     public void ScanDirectory_MissingSkillMd_ReturnsNull()
     {
         var skillDir = Path.Combine(_tempDir, "empty-skill");

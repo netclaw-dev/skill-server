@@ -50,6 +50,74 @@ public sealed class SkillArchiveBuilderTests
         Assert.Equal(0x1ED, GetUnixMode(archive.GetEntry("scripts/setup.sh")!));
     }
 
+    [Fact]
+    public void ToZipExternalAttributes_WritesRegularFileMetadataPortably()
+    {
+        var attributes = SkillArchiveBuilder.ToZipExternalAttributes(0x1ED);
+
+        var rawMode = GetRawUnixMode(attributes);
+        Assert.Equal(0x8000, rawMode & 0xF000);
+        Assert.Equal(0x1ED, rawMode & 0x1FF);
+    }
+
+    [Fact]
+    public void BuildZip_StripsSpecialUnixModeBits()
+    {
+        var skillMd = Encoding.UTF8.GetBytes("---\nname: test\ndescription: test\n---\n# Test");
+        var script = Encoding.UTF8.GetBytes("#!/bin/sh\necho ok\n");
+
+        var zip = SkillArchiveBuilder.BuildZip(skillMd,
+        [
+            new SkillArchiveResource(ResourcePath.Create("scripts/tool"), script, 0xFED)
+        ]);
+
+        using var archiveStream = new MemoryStream(zip);
+        using var archive = new ZipArchive(archiveStream, ZipArchiveMode.Read);
+        var rawMode = GetRawUnixMode(archive.GetEntry("scripts/tool")!.ExternalAttributes);
+
+        Assert.Equal(0x8000, rawMode & 0xF000);
+        Assert.Equal(0x1ED, rawMode & 0x1FF);
+        Assert.Equal(0, rawMode & 0x0E00);
+    }
+
+    [Fact]
+    public void BuildZip_WhenExtractedOnUnix_RestoresExecutableBit()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var tempDir = Path.Combine(Path.GetTempPath(), "skillserver-archive-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            var skillMd = Encoding.UTF8.GetBytes("---\nname: test\ndescription: test\n---\n# Test");
+            var script = Encoding.UTF8.GetBytes("#!/bin/sh\necho ok\n");
+            var zip = SkillArchiveBuilder.BuildZip(skillMd,
+            [
+                new SkillArchiveResource(ResourcePath.Create("scripts/tool"), script, 0x1ED)
+            ]);
+
+            var zipPath = Path.Combine(tempDir, "archive.zip");
+            var extractDir = Path.Combine(tempDir, "extracted");
+            File.WriteAllBytes(zipPath, zip);
+            ZipFile.ExtractToDirectory(zipPath, extractDir);
+
+            var mode = (int)(File.GetUnixFileMode(Path.Combine(extractDir, "scripts", "tool")) &
+                             (UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                              UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+                              UnixFileMode.OtherRead | UnixFileMode.OtherExecute));
+            Assert.Equal(0x1ED, mode);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
     private static int GetUnixMode(ZipArchiveEntry entry)
-        => (entry.ExternalAttributes >> 16) & 0xFFF;
+        => GetRawUnixMode(entry.ExternalAttributes) & 0x1FF;
+
+    private static int GetRawUnixMode(int externalAttributes)
+        => (externalAttributes >> 16) & 0xFFFF;
 }
