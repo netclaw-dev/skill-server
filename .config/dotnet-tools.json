@@ -9,8 +9,8 @@
       ],
       "rollForward": false
     },
-     "slopwatch.cmd": {
-      "version": "0.4.0",
+    "slopwatch.cmd": {
+      "version": "0.4.2",
       "commands": [
         "slopwatch"
       ],
