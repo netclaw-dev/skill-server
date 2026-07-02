@@ -17,7 +17,7 @@ internal sealed record ScannedSkill(
     string SkillMdPath,
     IReadOnlyList<ScannedResource> Resources);
 
-internal readonly record struct ScannedResource(string RelativePath, string AbsolutePath);
+internal readonly record struct ScannedResource(string RelativePath, string AbsolutePath, int? UnixMode);
 
 internal static partial class SkillDirectoryScanner
 {
@@ -79,11 +79,31 @@ internal static partial class SkillDirectoryScanner
             {
                 var relativePath = Path.GetRelativePath(skillDirectory, file)
                     .Replace('\\', '/');
-                resources.Add(new ScannedResource(relativePath, file));
+                resources.Add(new ScannedResource(relativePath, file, GetUnixMode(file)));
             }
         }
 
         return resources;
+    }
+
+    private static int? GetUnixMode(string file)
+    {
+        if (OperatingSystem.IsWindows())
+            return null;
+
+        const UnixFileMode permissionMask = UnixFileMode.UserRead
+                                            | UnixFileMode.UserWrite
+                                            | UnixFileMode.UserExecute
+                                            | UnixFileMode.GroupRead
+                                            | UnixFileMode.GroupWrite
+                                            | UnixFileMode.GroupExecute
+                                            | UnixFileMode.OtherRead
+                                            | UnixFileMode.OtherWrite
+                                            | UnixFileMode.OtherExecute
+                                            | UnixFileMode.StickyBit
+                                            | UnixFileMode.SetGroup
+                                            | UnixFileMode.SetUser;
+        return (int)(File.GetUnixFileMode(file) & permissionMask);
     }
 
     internal static Dictionary<string, string>? ParseFrontmatter(string content)

@@ -61,4 +61,8 @@ public sealed record RfcResourceEntry
 
     [JsonPropertyName("url")]
     public required string Url { get; init; }
+
+    [JsonPropertyName("unixMode")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UnixMode { get; init; }
 }

@@ -15,6 +15,7 @@ namespace SkillServer.Models;
 [JsonSerializable(typeof(RfcResourceEntry))]
 [JsonSerializable(typeof(SkillUploadRequest))]
 [JsonSerializable(typeof(SkillUploadResponse))]
+[JsonSerializable(typeof(IReadOnlyList<SkillResourceUploadMetadata>))]
 [JsonSerializable(typeof(SubAgentUploadResponse))]
 [JsonSerializable(typeof(SkillSummary))]
 [JsonSerializable(typeof(SkillVersionSummary))]

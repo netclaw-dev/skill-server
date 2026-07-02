@@ -59,6 +59,20 @@ public sealed record RfcResourceEntry
 
     [JsonPropertyName("url")]
     public string Url { get; init; } = "";
+
+    [JsonPropertyName("unixMode")]
+    public int? UnixMode { get; init; }
+}
+
+public sealed record SkillResourceUpload(string RelativePath, Stream Content, int? UnixMode = null);
+
+public sealed record SkillResourceUploadMetadata
+{
+    [JsonPropertyName("path")]
+    public string Path { get; init; } = "";
+
+    [JsonPropertyName("unixMode")]
+    public int? UnixMode { get; init; }
 }
 
 /// <summary>
@@ -244,6 +258,7 @@ public sealed record ErrorResponse
 [JsonSerializable(typeof(IReadOnlyList<ApiKeySummary>))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateRequest>))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateResponse>))]
+[JsonSerializable(typeof(IReadOnlyList<SkillResourceUploadMetadata>))]
 [JsonSerializable(typeof(CreateApiKeyRequest))]
 [JsonSerializable(typeof(ErrorResponse))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]

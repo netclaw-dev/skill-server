@@ -63,7 +63,7 @@ public sealed class SkillArchiveBackfillServiceTests : IDisposable
             skillDigest,
             skillSizeBytes,
             ct);
-        await repository.AddFileAsync(versionId, "references/guide.md", resourceDigest, resourceSizeBytes, ct);
+        await repository.AddFileAsync(versionId, "references/guide.md", resourceDigest, resourceSizeBytes, ct, unixMode: 0x1ED);
 
         await backfillService.BackfillAsync(ct);
 
@@ -79,6 +79,7 @@ public sealed class SkillArchiveBackfillServiceTests : IDisposable
 
         using var archive = new ZipArchive(archiveBlob!, ZipArchiveMode.Read);
         Assert.Equal(["SKILL.md", "references/guide.md"], archive.Entries.Select(e => e.FullName).ToArray());
+        Assert.Equal(0x1ED, (archive.GetEntry("references/guide.md")!.ExternalAttributes >> 16) & 0xFFF);
     }
 
     public void Dispose()

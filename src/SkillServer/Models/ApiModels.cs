@@ -43,6 +43,15 @@ public sealed record SkillUploadResponse
     public required string Url { get; init; }
 }
 
+public sealed record SkillResourceUploadMetadata
+{
+    [JsonPropertyName("path")]
+    public required string Path { get; init; }
+
+    [JsonPropertyName("unixMode")]
+    public int? UnixMode { get; init; }
+}
+
 public sealed record SubAgentUploadResponse
 {
     [JsonPropertyName("name")]

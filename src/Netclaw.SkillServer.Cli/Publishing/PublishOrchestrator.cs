@@ -67,7 +67,7 @@ internal sealed class PublishOrchestrator
             }
         }
 
-        var resources = new List<(string RelativePath, Stream Content)>();
+        var resources = new List<SkillResourceUpload>();
         FileStream? skillMdStream = null;
         try
         {
@@ -75,17 +75,20 @@ internal sealed class PublishOrchestrator
 
             foreach (var resource in skill.Resources)
             {
-                resources.Add((resource.RelativePath, File.OpenRead(resource.AbsolutePath)));
+                resources.Add(new SkillResourceUpload(
+                    resource.RelativePath,
+                    File.OpenRead(resource.AbsolutePath),
+                    resource.UnixMode));
             }
 
             if (options.Verbose)
             {
                 ConsoleOutput.WriteDim($"  Uploading SKILL.md ({FormatSize(skillMdStream.Length)})");
-                foreach (var (relativePath, stream) in resources)
-                    ConsoleOutput.WriteDim($"  Uploading {relativePath} ({FormatSize(stream.Length)})");
+                foreach (var resource in resources)
+                    ConsoleOutput.WriteDim($"  Uploading {resource.RelativePath} ({FormatSize(resource.Content.Length)})");
             }
 
-            var uploadResponse = await _client.UploadSkillIfNotExistsAsync(
+            var uploadResponse = await _client.UploadSkillIfNotExistsWithResourceUploadsAsync(
                 skill.Name, version, skillMdStream, resources, skill.Category, ct);
 
             if (uploadResponse is null)
@@ -106,8 +109,8 @@ internal sealed class PublishOrchestrator
         {
             if (skillMdStream is not null)
                 await skillMdStream.DisposeAsync();
-            foreach (var (_, stream) in resources)
-                await stream.DisposeAsync();
+            foreach (var resource in resources)
+                await resource.Content.DisposeAsync();
         }
     }
 

@@ -46,6 +46,7 @@ public sealed record SkillFile
     public required string RelativePath { get; init; }
     public required string Sha256 { get; init; }
     public required long SizeBytes { get; init; }
+    public int? UnixMode { get; init; }
 }
 
 /// <summary>

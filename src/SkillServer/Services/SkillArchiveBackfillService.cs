@@ -48,7 +48,7 @@ public sealed class SkillArchiveBackfillService
         }
 
         var files = await _repository.GetFilesAsync(version.Id, ct);
-        var resources = new List<(ResourcePath Path, byte[] Content)>(files.Count);
+        var resources = new List<SkillArchiveResource>(files.Count);
 
         foreach (var file in files)
         {
@@ -65,7 +65,7 @@ public sealed class SkillArchiveBackfillService
                 return;
             }
 
-            resources.Add((resourcePath.Value, content));
+            resources.Add(new SkillArchiveResource(resourcePath.Value, content, file.UnixMode));
         }
 
         var archiveBytes = SkillArchiveBuilder.BuildZip(skillMdBytes, resources);

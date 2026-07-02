@@ -131,7 +131,7 @@ public sealed partial class SkillUploadService
         SkillName name,
         SkillVersionString version,
         Stream skillMdContent,
-        IReadOnlyList<(ResourcePath Path, Stream Content)> resources,
+        IReadOnlyList<SkillResourceUpload> resources,
         string? category = null,
         CancellationToken ct = default)
     {
@@ -142,12 +142,12 @@ public sealed partial class SkillUploadService
         await skillMdContent.CopyToAsync(skillMdBuffer, ct);
         var skillMdBytes = skillMdBuffer.ToArray();
 
-        var resourceContents = new List<(ResourcePath Path, byte[] Content)>(resources.Count);
-        foreach (var (resourcePath, content) in resources)
+        var resourceContents = new List<SkillArchiveResource>(resources.Count);
+        foreach (var resource in resources)
         {
             using var resourceBuffer = new MemoryStream();
-            await content.CopyToAsync(resourceBuffer, ct);
-            resourceContents.Add((resourcePath, resourceBuffer.ToArray()));
+            await resource.Content.CopyToAsync(resourceBuffer, ct);
+            resourceContents.Add(new SkillArchiveResource(resource.Path, resourceBuffer.ToArray(), resource.UnixMode));
         }
 
         // First upload the SKILL.md
@@ -164,12 +164,12 @@ public sealed partial class SkillUploadService
         if (skillVersion is null) return SkillUploadResult.Failed("Version not found after upload.");
 
         // Store resource files
-        foreach (var (resourcePath, contentBytes) in resourceContents)
+        foreach (var resource in resourceContents)
         {
-            var (digest, sizeBytes) = await _blobStorage.StoreAsync(contentBytes, ct);
+            var (digest, sizeBytes) = await _blobStorage.StoreAsync(resource.Content, ct);
             var parsedDigest = Sha256Digest.Create(digest);
-            await _repository.AddFileAsync(skillVersion.Id, resourcePath.Value, parsedDigest.Value, sizeBytes, ct);
-            _logger.LogDebug("Added resource {Path} ({Digest})", resourcePath.Value, parsedDigest.Value);
+            await _repository.AddFileAsync(skillVersion.Id, resource.Path.Value, parsedDigest.Value, sizeBytes, ct, resource.UnixMode);
+            _logger.LogDebug("Added resource {Path} ({Digest})", resource.Path.Value, parsedDigest.Value);
         }
 
         var archiveBytes = SkillArchiveBuilder.BuildZip(skillMdBytes, resourceContents);
@@ -204,6 +204,8 @@ public sealed partial class SkillUploadService
     [GeneratedRegex(@"^---\s*\n(.*?)\n---", RegexOptions.Singleline)]
     private static partial Regex FrontmatterRegex();
 }
+
+public readonly record struct SkillResourceUpload(ResourcePath Path, Stream Content, int? UnixMode);
 
 /// <summary>
 /// Result of a skill upload operation.

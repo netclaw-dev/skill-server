@@ -314,7 +314,7 @@ public sealed class SkillRepository
         var files = await connection.QueryAsync<SkillFile>(
             """
             SELECT id AS Id, skill_version_id AS SkillVersionId, relative_path AS RelativePath,
-                   sha256 AS Sha256, size_bytes AS SizeBytes
+                   sha256 AS Sha256, size_bytes AS SizeBytes, unix_mode AS UnixMode
             FROM skill_files
             WHERE skill_version_id = @versionId
             ORDER BY relative_path
@@ -323,15 +323,15 @@ public sealed class SkillRepository
         return files.ToList();
     }
 
-    public async Task AddFileAsync(long versionId, string relativePath, string sha256, long sizeBytes, CancellationToken ct = default)
+    public async Task AddFileAsync(long versionId, string relativePath, string sha256, long sizeBytes, CancellationToken ct = default, int? unixMode = null)
     {
         await using var connection = new SqliteConnection(_connectionString);
         await connection.ExecuteAsync(
             """
-            INSERT INTO skill_files (skill_version_id, relative_path, sha256, size_bytes)
-            VALUES (@versionId, @relativePath, @sha256, @sizeBytes)
+            INSERT INTO skill_files (skill_version_id, relative_path, sha256, size_bytes, unix_mode)
+            VALUES (@versionId, @relativePath, @sha256, @sizeBytes, @unixMode)
             """,
-            new { versionId, relativePath, sha256, sizeBytes });
+            new { versionId, relativePath, sha256, sizeBytes, unixMode });
     }
 
     public async Task<IReadOnlyList<SkillVersionWithMetadata>> SearchSkillsAsync(

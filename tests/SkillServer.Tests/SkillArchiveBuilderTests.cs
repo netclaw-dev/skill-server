@@ -20,10 +20,10 @@ public sealed class SkillArchiveBuilderTests
         var guide = Encoding.UTF8.GetBytes("# Guide");
         var script = Encoding.UTF8.GetBytes("#!/bin/bash\necho setup");
 
-        var resources = new List<(ResourcePath Path, byte[] Content)>
+        var resources = new List<SkillArchiveResource>
         {
-            (ResourcePath.Create("scripts/setup.sh"), script),
-            (ResourcePath.Create("references/guide.md"), guide)
+            new(ResourcePath.Create("scripts/setup.sh"), script, 0x1ED),
+            new(ResourcePath.Create("references/guide.md"), guide, 0x1A4)
         };
 
         var reversedResources = resources.AsEnumerable().Reverse().ToList();
@@ -44,5 +44,12 @@ public sealed class SkillArchiveBuilderTests
 
         Assert.All(archive.Entries, entry =>
             Assert.Equal(new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero), entry.LastWriteTime));
+
+        Assert.Equal(0x1A4, GetUnixMode(archive.GetEntry("SKILL.md")!));
+        Assert.Equal(0x1A4, GetUnixMode(archive.GetEntry("references/guide.md")!));
+        Assert.Equal(0x1ED, GetUnixMode(archive.GetEntry("scripts/setup.sh")!));
     }
+
+    private static int GetUnixMode(ZipArchiveEntry entry)
+        => (entry.ExternalAttributes >> 16) & 0xFFF;
 }

@@ -56,7 +56,8 @@ public sealed class IndexGenerator
                     {
                         Path = f.RelativePath,
                         Digest = Sha256Digest.Create(f.Sha256).Value,
-                        Url = $"{baseUrl}/skills/{v.SkillName}/{v.Version}/{f.RelativePath}"
+                        Url = $"{baseUrl}/skills/{v.SkillName}/{v.Version}/{f.RelativePath}",
+                        UnixMode = f.UnixMode
                     }).ToList()
                     : null
             });

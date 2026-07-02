@@ -194,12 +194,26 @@ public sealed partial class SkillServerClient : IDisposable
         string name, string version, Stream skillMdContent, string? category = null,
         CancellationToken ct = default)
     {
-        return await UploadSkillWithResourcesAsync(name, version, skillMdContent, [], category, ct);
+        return await UploadSkillWithResourceUploadsAsync(name, version, skillMdContent, Array.Empty<SkillResourceUpload>(), category, ct);
     }
 
     public async Task<SkillUploadResponse> UploadSkillWithResourcesAsync(
         string name, string version, Stream skillMdContent,
         IReadOnlyList<(string RelativePath, Stream Content)> resources,
+        string? category = null, CancellationToken ct = default)
+    {
+        return await UploadSkillWithResourceUploadsAsync(
+            name,
+            version,
+            skillMdContent,
+            resources.Select(r => new SkillResourceUpload(r.RelativePath, r.Content)).ToList(),
+            category,
+            ct);
+    }
+
+    public async Task<SkillUploadResponse> UploadSkillWithResourceUploadsAsync(
+        string name, string version, Stream skillMdContent,
+        IReadOnlyList<SkillResourceUpload> resources,
         string? category = null, CancellationToken ct = default)
     {
         using var response = await PostSkillAsync(name, version, skillMdContent, resources, category, ct);
@@ -211,6 +225,20 @@ public sealed partial class SkillServerClient : IDisposable
     public async Task<SkillUploadResponse?> UploadSkillIfNotExistsAsync(
         string name, string version, Stream skillMdContent,
         IReadOnlyList<(string RelativePath, Stream Content)> resources,
+        string? category = null, CancellationToken ct = default)
+    {
+        return await UploadSkillIfNotExistsWithResourceUploadsAsync(
+            name,
+            version,
+            skillMdContent,
+            resources.Select(r => new SkillResourceUpload(r.RelativePath, r.Content)).ToList(),
+            category,
+            ct);
+    }
+
+    public async Task<SkillUploadResponse?> UploadSkillIfNotExistsWithResourceUploadsAsync(
+        string name, string version, Stream skillMdContent,
+        IReadOnlyList<SkillResourceUpload> resources,
         string? category = null, CancellationToken ct = default)
     {
         using var response = await PostSkillAsync(name, version, skillMdContent, resources, category, ct);
@@ -225,7 +253,7 @@ public sealed partial class SkillServerClient : IDisposable
 
     private async Task<HttpResponseMessage> PostSkillAsync(
         string name, string version, Stream skillMdContent,
-        IReadOnlyList<(string RelativePath, Stream Content)> resources,
+        IReadOnlyList<SkillResourceUpload> resources,
         string? category, CancellationToken ct)
     {
         using var content = new MultipartFormDataContent();
@@ -235,8 +263,24 @@ public sealed partial class SkillServerClient : IDisposable
             content.Add(new StringContent(category), "category");
         content.Add(new StreamContent(skillMdContent), "file", "SKILL.md");
 
-        foreach (var (relativePath, resourceStream) in resources)
-            content.Add(new StreamContent(resourceStream), "resources", relativePath);
+        foreach (var resource in resources)
+            content.Add(new StreamContent(resource.Content), "resources", resource.RelativePath);
+
+        if (resources.Any(resource => resource.UnixMode.HasValue))
+        {
+            var metadata = resources
+                .Where(resource => resource.UnixMode.HasValue)
+                .Select(resource => new SkillResourceUploadMetadata
+                {
+                    Path = resource.RelativePath,
+                    UnixMode = resource.UnixMode
+                })
+                .ToList();
+            var json = JsonSerializer.Serialize(
+                metadata,
+                SkillServerClientJsonContext.Default.IReadOnlyListSkillResourceUploadMetadata);
+            content.Add(new StringContent(json), "resourceMetadata");
+        }
 
         return await _httpClient.PostAsync("skills", content, ct);
     }

@@ -79,6 +79,40 @@ public sealed class SkillDirectoryScannerTests : IDisposable
     }
 
     [Fact]
+    public void ScanDirectory_CapturesUnixResourceMode()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var skillDir = Path.Combine(_tempDir, "skill-with-executable");
+        Directory.CreateDirectory(skillDir);
+        File.WriteAllText(Path.Combine(skillDir, "SKILL.md"), """
+            ---
+            name: skill-with-executable
+            version: 1.0.0
+            description: Has executable resource
+            ---
+            # Skill
+            """);
+
+        var binDir = Path.Combine(skillDir, "bin");
+        Directory.CreateDirectory(binDir);
+        var toolPath = Path.Combine(binDir, "tool");
+        File.WriteAllText(toolPath, "#!/bin/sh\necho ok\n");
+        File.SetUnixFileMode(toolPath,
+            UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+            UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+            UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+
+        var result = SkillDirectoryScanner.ScanDirectory(skillDir);
+
+        Assert.NotNull(result);
+        var resource = Assert.Single(result.Resources);
+        Assert.Equal("bin/tool", resource.RelativePath);
+        Assert.Equal(0x1ED, resource.UnixMode);
+    }
+
+    [Fact]
     public void ScanDirectory_MissingSkillMd_ReturnsNull()
     {
         var skillDir = Path.Combine(_tempDir, "empty-skill");
