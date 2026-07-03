@@ -1,3 +1,30 @@
+#### 0.4.0-beta.2 July 3rd 2026 ####
+
+**New Features**
+- Add native manifest endpoints (`/manifest.json` and linked skill identity/version documents) for destination-agnostic, RFC-compatible sync (#96)
+- Add first-class sub-agent support — `/subagents` storage with upload, list, delete, and `agent.md` download endpoints, and NetClaw sub-agent markdown frontmatter validation (#97)
+- Add native sub-agent manifest endpoints (`/manifest/subagents/...`) that traverse from the root native manifest alongside skills (#98)
+- Add sub-agent support to `Netclaw.SkillClient` — upload, list, download, delete, and native manifest traversal helpers (#99)
+- Add CLI sub-agent commands: `lint subagent`, `publish-subagent`, and `download-subagent` for validating, publishing, and syncing sub-agents from the command line (#100)
+- Add deterministic `archive.zip` downloads for resourceful skills, backfilled for existing skill versions (#95)
+
+**Improvements**
+- Preserve executable permission bits (Unix mode) for skill resources — packaged helper scripts in downloaded archives no longer need a manual `chmod` (#103)
+
+**CI/CD**
+- Skip the Docker `latest` tag and mark GitHub releases as prerelease automatically when publishing a prerelease tag (#101)
+
+**Security**
+- Resolve CVE-2026-49451 / GHSA-v5pm-xwqc-g5wc by pinning the transitive `Microsoft.OpenApi` dependency to 2.7.5 (#104)
+- Resolve GHSA-hv8m-jj95-wg3x (MessagePack/StreamJsonRpc LZ4 decompression DoS) by upgrading MessagePack from 2.5.301 to 3.1.7 (#76, #80)
+- Suppress GHSA-2m69-gcr7-jv3q (SQLitePCLRaw) pending an upstream patched release (#76)
+
+**Dependency Updates**
+- Bump Microsoft.Data.Sqlite from 10.0.7 to 10.0.9 (#106)
+- Bump Microsoft.Extensions.Http from 10.0.7 to 10.0.9 (#107)
+- Bump Dapper from 2.1.72 to 2.1.79 (#78)
+- Bump Microsoft.AspNetCore.OpenApi from 10.0.7 to 10.0.9 (#83)
+
 #### 0.3.1 May 15th 2026 ####
 
 **New Features**
