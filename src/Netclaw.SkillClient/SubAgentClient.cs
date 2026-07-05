@@ -13,7 +13,7 @@ public sealed partial class SkillServerClient
     public async Task<IReadOnlyList<SubAgentSummary>> ListSubAgentsAsync(CancellationToken ct = default)
     {
         var result = await _httpClient.GetFromJsonAsync(
-            "subagents",
+            Api("subagents"),
             SkillServerClientJsonContext.Default.IReadOnlyListSubAgentSummary,
             ct);
         return result ?? [];
@@ -24,7 +24,7 @@ public sealed partial class SkillServerClient
         CancellationToken ct = default)
     {
         var result = await _httpClient.GetFromJsonAsync(
-            $"subagents/{Uri.EscapeDataString(name)}",
+            $"{Api("subagents")}/{Uri.EscapeDataString(name)}",
             SkillServerClientJsonContext.Default.IReadOnlyListSubAgentVersionSummary,
             ct);
         return result ?? [];
@@ -36,7 +36,7 @@ public sealed partial class SkillServerClient
         CancellationToken ct = default)
     {
         return await _httpClient.GetFromJsonAsync(
-            $"subagents/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}",
+            $"{Api("subagents")}/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}",
             SkillServerClientJsonContext.Default.SubAgentVersionSummary,
             ct);
     }
@@ -44,7 +44,7 @@ public sealed partial class SkillServerClient
     public async Task<Stream> GetSubAgentFileAsync(string name, string version, CancellationToken ct = default)
     {
         var response = await _httpClient.GetAsync(
-            $"subagents/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}/agent.md",
+            $"{Api("subagents")}/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}/agent.md",
             ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStreamAsync(ct);
@@ -56,7 +56,7 @@ public sealed partial class SkillServerClient
         CancellationToken ct = default)
     {
         var response = await _httpClient.GetAsync(
-            $"subagents/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}/agent.md",
+            $"{Api("subagents")}/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}/agent.md",
             ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(ct);
@@ -94,7 +94,7 @@ public sealed partial class SkillServerClient
     public async Task DeleteSubAgentVersionAsync(string name, string version, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync(
-            $"subagents/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}",
+            $"{Api("subagents")}/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}",
             ct);
         response.EnsureSuccessStatusCode();
     }
@@ -110,6 +110,6 @@ public sealed partial class SkillServerClient
         content.Add(new StringContent(version), "version");
         content.Add(new StreamContent(agentMdContent), "file", "agent.md");
 
-        return await _httpClient.PostAsync("subagents", content, ct);
+        return await _httpClient.PostAsync(Api("subagents"), content, ct);
     }
 }

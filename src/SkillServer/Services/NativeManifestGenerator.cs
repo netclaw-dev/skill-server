@@ -32,12 +32,14 @@ public sealed class NativeManifestGenerator
         var manifest = new NativeRootManifest
         {
             GeneratedAt = DateTimeOffset.UtcNow,
+            ApiVersion = "v1",
             Links = new NativeRootManifestLinks
             {
-                Self = Link("/manifest.json"),
+                Self = Link("/api/v1/manifest.json"),
                 RfcSkills = Link("/.well-known/agent-skills/index.json"),
-                Skills = Link("/manifest/skills/index.json"),
-                SubAgents = Link("/manifest/subagents/index.json")
+                Skills = Link("/api/v1/manifest/skills/index.json"),
+                SubAgents = Link("/api/v1/manifest/subagents/index.json"),
+                ApiBase = Link("/api/v1")
             }
         };
 
@@ -48,11 +50,11 @@ public sealed class NativeManifestGenerator
     {
         var index = new NativeSkillCollectionIndex
         {
-            Links = SelfLinks("/manifest/skills/index.json"),
+            Links = SelfLinks("/api/v1/manifest/skills/index.json"),
             Pages = [new NativeManifestPageLink
             {
                 Range = SkillsPageRange,
-                Href = "/manifest/skills/pages/all.json"
+                Href = "/api/v1/manifest/skills/pages/all.json"
             }]
         };
 
@@ -84,7 +86,7 @@ public sealed class NativeManifestGenerator
                     Max = latest.Version,
                     Count = versions.Count
                 },
-                Href = $"/manifest/skills/{latest.SkillName}/index.json"
+                Href = $"/api/v1/manifest/skills/{latest.SkillName}/index.json"
             });
         }
 
@@ -92,7 +94,7 @@ public sealed class NativeManifestGenerator
         {
             Range = SkillsPageRange,
             Items = items,
-            Links = SelfLinks("/manifest/skills/pages/all.json")
+            Links = SelfLinks("/api/v1/manifest/skills/pages/all.json")
         };
     }
 
@@ -116,9 +118,9 @@ public sealed class NativeManifestGenerator
                 Version = v.Version,
                 PublishedAt = v.PublishedAt,
                 Digest = Sha256Digest.Create(v.ArtifactSha256).Value,
-                Href = $"/manifest/skills/{skill.Name}/versions/{v.Version}.json"
+                Href = $"/api/v1/manifest/skills/{skill.Name}/versions/{v.Version}.json"
             }).ToList(),
-            Links = SelfLinks($"/manifest/skills/{skill.Name}/index.json")
+            Links = SelfLinks($"/api/v1/manifest/skills/{skill.Name}/index.json")
         };
     }
 
@@ -140,9 +142,9 @@ public sealed class NativeManifestGenerator
                 : new NativeSubagentRoute
                 {
                     Name = skillVersion.RoutesToSubagent,
-                    Href = $"/manifest/subagents/{skillVersion.RoutesToSubagent}/index.json"
+                    Href = $"/api/v1/manifest/subagents/{skillVersion.RoutesToSubagent}/index.json"
                 },
-            Links = SelfLinks($"/manifest/skills/{skill.Name}/versions/{skillVersion.Version}.json")
+            Links = SelfLinks($"/api/v1/manifest/skills/{skill.Name}/versions/{skillVersion.Version}.json")
         };
     }
 
@@ -150,11 +152,11 @@ public sealed class NativeManifestGenerator
     {
         var index = new NativeSubAgentCollectionIndex
         {
-            Links = SelfLinks("/manifest/subagents/index.json"),
+            Links = SelfLinks("/api/v1/manifest/subagents/index.json"),
             Pages = [new NativeManifestPageLink
             {
                 Range = SubAgentsPageRange,
-                Href = "/manifest/subagents/pages/all.json"
+                Href = "/api/v1/manifest/subagents/pages/all.json"
             }]
         };
 
@@ -186,7 +188,7 @@ public sealed class NativeManifestGenerator
                     Max = latest.Version,
                     Count = versions.Count
                 },
-                Href = $"/manifest/subagents/{latest.SubAgentName}/index.json"
+                Href = $"/api/v1/manifest/subagents/{latest.SubAgentName}/index.json"
             });
         }
 
@@ -194,7 +196,7 @@ public sealed class NativeManifestGenerator
         {
             Range = SubAgentsPageRange,
             Items = items,
-            Links = SelfLinks("/manifest/subagents/pages/all.json")
+            Links = SelfLinks("/api/v1/manifest/subagents/pages/all.json")
         };
     }
 
@@ -218,9 +220,9 @@ public sealed class NativeManifestGenerator
                 Version = v.Version,
                 PublishedAt = v.PublishedAt,
                 Digest = Sha256Digest.Create(v.Sha256).Value,
-                Href = $"/manifest/subagents/{subAgent.Name}/versions/{v.Version}.json"
+                Href = $"/api/v1/manifest/subagents/{subAgent.Name}/versions/{v.Version}.json"
             }).ToList(),
-            Links = SelfLinks($"/manifest/subagents/{subAgent.Name}/index.json")
+            Links = SelfLinks($"/api/v1/manifest/subagents/{subAgent.Name}/index.json")
         };
     }
 
@@ -240,9 +242,9 @@ public sealed class NativeManifestGenerator
             Name = subAgent.Name,
             Version = subAgentVersion.Version,
             Description = subAgentVersion.Description,
-            Url = $"{baseUrl}/subagents/{subAgent.Name}/{subAgentVersion.Version}/agent.md",
+            Url = $"{baseUrl}/api/v1/subagents/{subAgent.Name}/{subAgentVersion.Version}/agent.md",
             Digest = Sha256Digest.Create(subAgentVersion.Sha256).Value,
-            Links = SelfLinks($"/manifest/subagents/{subAgent.Name}/versions/{subAgentVersion.Version}.json")
+            Links = SelfLinks($"/api/v1/manifest/subagents/{subAgent.Name}/versions/{subAgentVersion.Version}.json")
         };
     }
 
@@ -256,8 +258,8 @@ public sealed class NativeManifestGenerator
             Type = version.SkillType,
             Description = version.Description,
             Url = version.SkillType == SkillTypes.SkillMd
-                ? $"{baseUrl}/skills/{skillName}/{version.Version}/SKILL.md"
-                : $"{baseUrl}/skills/{skillName}/{version.Version}/archive.zip",
+                ? $"{baseUrl}/api/v1/skills/{skillName}/{version.Version}/SKILL.md"
+                : $"{baseUrl}/api/v1/skills/{skillName}/{version.Version}/archive.zip",
             Digest = Sha256Digest.Create(version.ArtifactSha256).Value
         };
     }

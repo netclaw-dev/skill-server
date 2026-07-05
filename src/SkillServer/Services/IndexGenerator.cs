@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="IndexGenerator.cs" company="Petabridge, LLC">
 //      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -47,8 +47,8 @@ public sealed class IndexGenerator
                 Type = v.SkillType,
                 Description = v.Description,
                 Url = v.SkillType == SkillTypes.SkillMd
-                    ? $"{baseUrl}/skills/{v.SkillName}/{v.Version}/SKILL.md"
-                    : $"{baseUrl}/skills/{v.SkillName}/{v.Version}/archive.zip",
+                    ? $"{baseUrl}/api/v1/skills/{v.SkillName}/{v.Version}/SKILL.md"
+                    : $"{baseUrl}/api/v1/skills/{v.SkillName}/{v.Version}/archive.zip",
                 Digest = Sha256Digest.Create(v.ArtifactSha256).Value,
                 Version = v.Version,
                 Resources = files.Count > 0
@@ -56,7 +56,7 @@ public sealed class IndexGenerator
                     {
                         Path = f.RelativePath,
                         Digest = Sha256Digest.Create(f.Sha256).Value,
-                        Url = $"{baseUrl}/skills/{v.SkillName}/{v.Version}/{f.RelativePath}",
+                        Url = $"{baseUrl}/api/v1/skills/{v.SkillName}/{v.Version}/{f.RelativePath}",
                         UnixMode = f.UnixMode
                     }).ToList()
                     : null

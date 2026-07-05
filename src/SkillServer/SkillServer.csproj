@@ -45,4 +45,6 @@
     </None>
   </ItemGroup>
 
+  <!-- .NET SDK 10+ includes wwwroot implicitly as Content with CopyToPublishDirectory=PreserveNewest -->
+
 </Project>

@@ -76,7 +76,7 @@ public sealed class NativeSyncSecurityTests
 
         content.Add(new ByteArrayContent("# Guide"u8.ToArray()), "resources", "references/guide.md");
 
-        var response = await _fixture.AuthenticatedHttpClient.PostAsync("/skills", content, ct);
+        var response = await _fixture.AuthenticatedHttpClient.PostAsync("/api/v1/skills", content, ct);
         response.EnsureSuccessStatusCode();
         return skillName;
     }
@@ -89,7 +89,7 @@ public sealed class NativeSyncSecurityTests
         var ct = TestContext.Current.CancellationToken;
 
         using var content = CreateSubAgentUpload("no-auth-subagent", "1.0.0");
-        var response = await _fixture.HttpClient.PostAsync("/subagents", content, ct);
+        var response = await _fixture.HttpClient.PostAsync("/api/v1/subagents", content, ct);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -100,7 +100,7 @@ public sealed class NativeSyncSecurityTests
         var ct = TestContext.Current.CancellationToken;
 
         using var content = CreateSubAgentUpload("bad-key-subagent", "1.0.0");
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/subagents") { Content = content };
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/subagents") { Content = content };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "sk-invalid-key");
 
         var response = await _fixture.HttpClient.SendAsync(request, ct);
@@ -113,7 +113,7 @@ public sealed class NativeSyncSecurityTests
     {
         var ct = TestContext.Current.CancellationToken;
 
-        var response = await _fixture.HttpClient.DeleteAsync("/subagents/nonexistent/1.0.0", ct);
+        var response = await _fixture.HttpClient.DeleteAsync("/api/v1/subagents/nonexistent/1.0.0", ct);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -121,9 +121,9 @@ public sealed class NativeSyncSecurityTests
     // ---- Task 4: manifest + artifact reads stay open (auth is enabled) ---
 
     [Theory]
-    [InlineData("/manifest.json")]
-    [InlineData("/manifest/skills/index.json")]
-    [InlineData("/manifest/subagents/index.json")]
+    [InlineData("/api/v1/manifest.json")]
+    [InlineData("/api/v1/manifest/skills/index.json")]
+    [InlineData("/api/v1/manifest/subagents/index.json")]
     public async Task ManifestEndpoints_AreReadableWithoutAuth(string path)
     {
         var ct = TestContext.Current.CancellationToken;
@@ -145,15 +145,15 @@ public sealed class NativeSyncSecurityTests
         await PublishResourcefulSkillAsync(skillName, ct);
 
         using var subAgentUpload = CreateSubAgentUpload(subAgentName, "1.0.0");
-        (await _fixture.AuthenticatedHttpClient.PostAsync("/subagents", subAgentUpload, ct))
+        (await _fixture.AuthenticatedHttpClient.PostAsync("/api/v1/subagents", subAgentUpload, ct))
             .EnsureSuccessStatusCode();
 
         string[] openArtifacts =
         [
-            $"/skills/{skillName}/1.0.0/SKILL.md",
-            $"/skills/{skillName}/1.0.0/archive.zip",
-            $"/skills/{skillName}/1.0.0/references/guide.md",
-            $"/subagents/{subAgentName}/1.0.0/agent.md"
+            $"/api/v1/skills/{skillName}/1.0.0/SKILL.md",
+            $"/api/v1/skills/{skillName}/1.0.0/archive.zip",
+            $"/api/v1/skills/{skillName}/1.0.0/references/guide.md",
+            $"/api/v1/subagents/{subAgentName}/1.0.0/agent.md"
         ];
 
         foreach (var artifact in openArtifacts)
@@ -178,7 +178,7 @@ public sealed class NativeSyncSecurityTests
         await PublishResourcefulSkillAsync(skillName, ct);
 
         var response = await _fixture.HttpClient.GetAsync(
-            $"/skills/{skillName}/1.0.0/{traversalPath}", ct);
+            $"/api/v1/skills/{skillName}/1.0.0/{traversalPath}", ct);
 
         // A traversal path must never resolve to a real file. Resource lookup is
         // by exact stored relative-path equality, so this yields a 404 rather than

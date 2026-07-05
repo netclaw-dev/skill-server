@@ -32,6 +32,9 @@ public sealed record NativeRootManifestLinks
 
     [JsonPropertyName("subagents")]
     public NativeManifestLink SubAgents { get; init; } = new();
+
+    [JsonPropertyName("apiBase")]
+    public NativeManifestLink ApiBase { get; init; } = new();
 }
 
 public sealed record NativeRootManifest

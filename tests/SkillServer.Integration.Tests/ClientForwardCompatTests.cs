@@ -49,11 +49,11 @@ public sealed class ClientForwardCompatTests
               "generatedAt": "2026-07-03T00:00:00Z",
               "futureTopLevelField": { "anything": [1, 2, 3] },
               "links": {
-                "self": { "href": "/manifest.json" },
+                "self": { "href": "/api/v1/manifest.json" },
                 "rfcSkills": { "href": "/.well-known/agent-skills/index.json" },
-                "skills": { "href": "/manifest/skills/index.json" },
-                "subagents": { "href": "/manifest/subagents/index.json" },
-                "futureCollection": { "href": "/manifest/future/index.json" }
+                "skills": { "href": "/api/v1/manifest/skills/index.json" },
+                "subagents": { "href": "/api/v1/manifest/subagents/index.json" },
+                "futureCollection": { "href": "/api/v1/manifest/future/index.json" }
               }
             }
             """;
@@ -64,8 +64,8 @@ public sealed class ClientForwardCompatTests
         var manifest = await client.GetManifestAsync(ct);
 
         Assert.NotNull(manifest);
-        Assert.Equal("/manifest/skills/index.json", manifest.Links.Skills.Href);
-        Assert.Equal("/manifest/subagents/index.json", manifest.Links.SubAgents.Href);
+        Assert.Equal("/api/v1/manifest/skills/index.json", manifest.Links.Skills.Href);
+        Assert.Equal("/api/v1/manifest/subagents/index.json", manifest.Links.SubAgents.Href);
     }
 
     [Fact]
@@ -81,11 +81,11 @@ public sealed class ClientForwardCompatTests
                   "name": "example-skill",
                   "latestVersion": "1.0.0",
                   "versionRange": { "min": "1.0.0", "max": "1.0.0", "count": 1 },
-                  "href": "/manifest/skills/example-skill/index.json",
+                  "href": "/api/v1/manifest/skills/example-skill/index.json",
                   "futureItemField": "ignored"
                 }
               ],
-              "links": { "self": { "href": "/manifest/skills/pages/0.json" } }
+              "links": { "self": { "href": "/api/v1/manifest/skills/pages/0.json" } }
             }
             """;
 
@@ -99,7 +99,7 @@ public sealed class ClientForwardCompatTests
         Assert.Equal("future-skill-page-kind", page.Kind);
         var item = Assert.Single(page.Items);
         Assert.Equal("example-skill", item.Name);
-        Assert.Equal("/manifest/skills/example-skill/index.json", item.Href);
+        Assert.Equal("/api/v1/manifest/skills/example-skill/index.json", item.Href);
     }
 
     [Fact]
@@ -113,12 +113,12 @@ public sealed class ClientForwardCompatTests
                 "version": "1.0.0",
                 "type": "oci-image",
                 "description": "A future artifact type older clients do not understand.",
-                "url": "/skills/example-skill/1.0.0/artifact.oci",
+                "url": "/api/v1/skills/example-skill/1.0.0/artifact.oci",
                 "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
                 "futureArtifactField": 42
               },
               "routesToSubagent": null,
-              "links": { "self": { "href": "/manifest/skills/example-skill/versions/1.0.0.json" } }
+              "links": { "self": { "href": "/api/v1/manifest/skills/example-skill/versions/1.0.0.json" } }
             }
             """;
 

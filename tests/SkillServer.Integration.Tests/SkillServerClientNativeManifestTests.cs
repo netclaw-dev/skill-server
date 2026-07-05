@@ -82,8 +82,8 @@ public sealed class SkillServerClientNativeManifestTests
 
         var root = await _fixture.Client.GetManifestAsync(ct);
         Assert.NotNull(root);
-        Assert.Equal("/manifest/skills/index.json", root.Links.Skills.Href);
-        Assert.Equal("/manifest/subagents/index.json", root.Links.SubAgents.Href);
+        Assert.Equal("/api/v1/manifest/skills/index.json", root.Links.Skills.Href);
+        Assert.Equal("/api/v1/manifest/subagents/index.json", root.Links.SubAgents.Href);
 
         var skillIndex = await _fixture.Client.GetNativeSkillIndexAsync(root.Links.Skills, ct);
         Assert.NotNull(skillIndex);

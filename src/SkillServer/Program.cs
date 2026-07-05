@@ -1,8 +1,9 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Petabridge, LLC">
 //      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
+using Microsoft.AspNetCore.StaticFiles;
 using SkillServer;
 using SkillServer.Data;
 using SkillServer.Models;
@@ -51,7 +52,14 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// Serve static files for gallery UI
+app.UseStaticFiles();
+
+// Map API endpoints (must be before fallback)
 app.MapSkillServerEndpoints();
+
+// Serve gallery UI for non-API paths
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

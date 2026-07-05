@@ -32,6 +32,9 @@ public sealed record NativeRootManifestLinks
 
     [JsonPropertyName("subagents")]
     public required NativeManifestLink SubAgents { get; init; }
+
+    [JsonPropertyName("apiBase")]
+    public required NativeManifestLink ApiBase { get; init; }
 }
 
 public sealed record NativeRootManifest
@@ -41,6 +44,9 @@ public sealed record NativeRootManifest
 
     [JsonPropertyName("generatedAt")]
     public required DateTimeOffset GeneratedAt { get; init; }
+
+    [JsonPropertyName("apiVersion")]
+    public string? ApiVersion { get; init; }
 
     [JsonPropertyName("links")]
     public required NativeRootManifestLinks Links { get; init; }

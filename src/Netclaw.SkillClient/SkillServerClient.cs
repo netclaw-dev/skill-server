@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="SkillServerClient.cs" company="Petabridge, LLC">
 //      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -18,11 +18,13 @@ public sealed partial class SkillServerClient : IDisposable
     private readonly HttpClient _httpClient;
     private readonly bool _ownsHttpClient;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly string _apiBase;
 
     public SkillServerClient(string serverUrl, string? apiKey = null)
     {
         _httpClient = new HttpClient { BaseAddress = new Uri(serverUrl.TrimEnd('/') + "/") };
         _ownsHttpClient = true;
+        _apiBase = "api/v1";
         if (!string.IsNullOrEmpty(apiKey))
             _httpClient.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
@@ -36,11 +38,14 @@ public sealed partial class SkillServerClient : IDisposable
     {
         _httpClient = httpClient;
         _ownsHttpClient = false;
+        _apiBase = "api/v1";
         _jsonOptions = new JsonSerializerOptions
         {
             TypeInfoResolver = SkillServerClientJsonContext.Default
         };
     }
+
+    private string Api(string path) => $"{_apiBase}/{path.TrimStart('/')}";
 
     /// <summary>
     /// Gets the RFC-compliant skill index per Cloudflare Agent Skills Discovery RFC v0.2.0.
@@ -65,7 +70,7 @@ public sealed partial class SkillServerClient : IDisposable
         if (skip.HasValue) query.Add($"skip={skip.Value}");
         if (take.HasValue) query.Add($"take={take.Value}");
 
-        var url = query.Count > 0 ? $"skills?{string.Join("&", query)}" : "skills";
+        var url = query.Count > 0 ? $"{Api("skills")}?{string.Join("&", query)}" : Api("skills");
 
         var result = await _httpClient.GetFromJsonAsync(
             url,
@@ -80,7 +85,7 @@ public sealed partial class SkillServerClient : IDisposable
     public async Task<IReadOnlyList<SkillVersionSummary>> GetSkillVersionsAsync(string name, CancellationToken ct = default)
     {
         var result = await _httpClient.GetFromJsonAsync(
-            $"skills/{Uri.EscapeDataString(name)}",
+            $"{Api("skills")}/{Uri.EscapeDataString(name)}",
             SkillServerClientJsonContext.Default.IReadOnlyListSkillVersionSummary,
             ct);
         return result ?? [];
@@ -92,7 +97,7 @@ public sealed partial class SkillServerClient : IDisposable
     public async Task<SkillVersionSummary?> GetVersionAsync(string name, string version, CancellationToken ct = default)
     {
         return await _httpClient.GetFromJsonAsync(
-            $"skills/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}",
+            $"{Api("skills")}/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}",
             SkillServerClientJsonContext.Default.SkillVersionSummary,
             ct);
     }
@@ -103,7 +108,7 @@ public sealed partial class SkillServerClient : IDisposable
     public async Task<Stream> GetSkillFileAsync(string name, string version, string path = "SKILL.md", CancellationToken ct = default)
     {
         var response = await _httpClient.GetAsync(
-            $"skills/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}/{path}",
+            $"{Api("skills")}/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}/{path}",
             ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStreamAsync(ct);
@@ -115,7 +120,7 @@ public sealed partial class SkillServerClient : IDisposable
     public async Task<string> GetSkillFileAsStringAsync(string name, string version, string path = "SKILL.md", CancellationToken ct = default)
     {
         var response = await _httpClient.GetAsync(
-            $"skills/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}/{path}",
+            $"{Api("skills")}/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}/{path}",
             ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(ct);
@@ -130,7 +135,7 @@ public sealed partial class SkillServerClient : IDisposable
             ? digest[7..]
             : digest;
 
-        var response = await _httpClient.GetAsync($"blobs/sha256/{normalizedDigest}", ct);
+        var response = await _httpClient.GetAsync($"{Api("blobs/sha256")}/{normalizedDigest}", ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStreamAsync(ct);
     }
@@ -160,29 +165,30 @@ public sealed partial class SkillServerClient : IDisposable
         if (skip.HasValue) queryParams.Add($"skip={skip.Value}");
         if (take.HasValue) queryParams.Add($"take={take.Value}");
 
-        var url = $"skills?{string.Join("&", queryParams)}";
-        var result = await _httpClient.GetFromJsonAsync(url,
-            SkillServerClientJsonContext.Default.IReadOnlyListSkillSummary, ct);
+        var url = $"{Api("skills")}?{string.Join("&", queryParams)}";
+
+        var result = await _httpClient.GetFromJsonAsync(
+            url,
+            SkillServerClientJsonContext.Default.IReadOnlyListSkillSummary,
+            ct);
         return result ?? [];
     }
 
     /// <summary>
-    /// Gets the latest version of a skill by name.
+    /// Gets the latest version of a skill.
     /// </summary>
     public async Task<SkillVersionSummary?> GetLatestVersionAsync(string name, CancellationToken ct = default)
     {
         return await _httpClient.GetFromJsonAsync(
-            $"skills/{Uri.EscapeDataString(name)}/latest",
-            SkillServerClientJsonContext.Default.SkillVersionSummary, ct);
+            $"{Api("skills")}/{Uri.EscapeDataString(name)}/latest",
+            SkillServerClientJsonContext.Default.SkillVersionSummary,
+            ct);
     }
 
-    /// <summary>
-    /// Checks if any of the specified skills have newer versions available.
-    /// </summary>
     public async Task<IReadOnlyList<CheckUpdateResponse>> CheckUpdatesAsync(
         IReadOnlyList<CheckUpdateRequest> items, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("skills/check-updates", items,
+        var response = await _httpClient.PostAsJsonAsync(Api("skills/check-updates"), items,
             SkillServerClientJsonContext.Default.IReadOnlyListCheckUpdateRequest, ct);
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync(
@@ -282,13 +288,13 @@ public sealed partial class SkillServerClient : IDisposable
             content.Add(new StringContent(json), "resourceMetadata");
         }
 
-        return await _httpClient.PostAsync("skills", content, ct);
+        return await _httpClient.PostAsync(Api("skills"), content, ct);
     }
 
     public async Task DeleteVersionAsync(string name, string version, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync(
-            $"skills/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}", ct);
+            $"{Api("skills")}/{Uri.EscapeDataString(name)}/{Uri.EscapeDataString(version)}", ct);
         response.EnsureSuccessStatusCode();
     }
 
@@ -296,7 +302,7 @@ public sealed partial class SkillServerClient : IDisposable
         string label, DateTimeOffset? expiresAt = null, CancellationToken ct = default)
     {
         var request = new CreateApiKeyRequest { Label = label, ExpiresAt = expiresAt };
-        var response = await _httpClient.PostAsJsonAsync("api-keys",
+        var response = await _httpClient.PostAsJsonAsync(Api("api-keys"),
             request, SkillServerClientJsonContext.Default.CreateApiKeyRequest, ct);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync(
@@ -305,14 +311,14 @@ public sealed partial class SkillServerClient : IDisposable
 
     public async Task<IReadOnlyList<ApiKeySummary>> ListApiKeysAsync(CancellationToken ct = default)
     {
-        var result = await _httpClient.GetFromJsonAsync("api-keys",
+        var result = await _httpClient.GetFromJsonAsync(Api("api-keys"),
             SkillServerClientJsonContext.Default.IReadOnlyListApiKeySummary, ct);
         return result ?? [];
     }
 
     public async Task DeleteApiKeyAsync(long id, CancellationToken ct = default)
     {
-        var response = await _httpClient.DeleteAsync($"api-keys/{id}", ct);
+        var response = await _httpClient.DeleteAsync($"{Api("api-keys")}/{id}", ct);
         response.EnsureSuccessStatusCode();
     }
 
