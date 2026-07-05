@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkillServer Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <!-- Netclaw lobster icon (extracted from brand, white fill, no bg) -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" width="32" height="32">
+        <path d="M997.4 461.4c56.9-4 122.9 3.9 178.9 14.3 122 22.7 225.5 64 333.4 124.1 1.3 67-1.7 133.4 1.3 200.4.4 34.8 1.7 68.6-1.3 103.3-11.4 146.6-62.7 287.3-148.3 406.8-47.9 65.6-114.9 133.7-177.3 186 5.9-9 10.5-18.8 13.7-29.1 4.7-16.2 3.2-36.8-5.3-52.3-8.6-15.4-25.2-18.6-40.9-23.1 25.8-20.9 43.1-34.8 67.3-58.1 117.6-113.4 183.7-273.2 195.6-435 2.6-35.6 2.2-68.5 2.2-104.4L1417 660.8c-112.7-58.5-237-97.4-364.3-103-26.1-1.5-49.4-.5-75.4 1.3-124 8.4-234.9 45.9-345.1 101.4-.2 41.8-.1 83.5.3 125.3.193 70.3-.91 133.3 12.985 202.9 25.533 127.93 77.16 241.16 169.278 334.53 16.006 16.07 32.907 31.23 50.621 45.41 10.24 8.09 20.941 15.34 30.894 23.79-18.984 6.01-38.382 10.21-44.136 32.5-6.934 26.87 1.98 49.11 14.661 72.49-42.539-35.75-84.017-77.92-121.26-118.9-120.792-132.91-187.237-296.13-202.704-474.582-4.246-48.987-3.469-100.891-3.545-150.65L539.2 658.1c-.01-18.28-1.19-39.61.933-57.82C679.4 518 836.36 470.5 997.4 461.4z" fill="white"/>
+        <path d="M1012 1180.4c4.4-.52 13.33-.66 18.02-.48 33.49 1.3 70.13 15.87 93.92 39.72 4.68 4.9 7.94 11.8 7.33 18.72-1.17 13.51-21.58 26.17-31.78 34.41 8.53-.02 29.73.13 34.1 8.15 10.53 19.33-30.41 46.07-18.53 56.94 75.14-6.87 21.37 38.26-3.52 62-47.77-5.71-109.99 8.72-86.82 72.4-13.49 37.09-49.71 68.46-84.99 84.6-2.58-5.13-5.95-10.61-8.67-15.74-18.83-35.53-11.69-60.97 17.35-86.81-20.97 41.9-3.97 64.94-49.32 106.17-3.71 3.17-6.54 5.08-10.53 7.82-13.81-9.48-42.92-39.19-51.78-53.56-14.936-24.24-10.58-56.34-3.91-82.54-38.446 35.78-33.447 62.55-8.254 104.38-39.044-19.13-89.362-63.02-90.821-110.59-.338-11.02-6.439-23.14-14.437-30.65-21.367-20.08-50.599-18.12-77.838-17.64-10.108 9.93-41.699 37.31-40.567 51.54-.21 2.72-1.545 5.24-3.659 6.93-7.724 6.06-25.106 3.33-34.96 2.47L947.1 1329.1c-30.39-24.28-60.325-55.52 3.166-56.42-3.188-2.71-8.619-7.04-12.028-9.22-40.215-25.71-11.836-49.47 17.414-65.77 18.314-10.21 34.497-15.05 56.387-17.28z" fill="white"/>
+        <path d="M1072.7 821.2c4.03.39 6.98.79 10.04 3.3 2.03 6.48-13.6 20.97-15.67 36.37-3.89 28.83 63.95 37.61 30.57 63.2 43.15 53.65 57.27 134.69 46.26 202.02-3.83 23.38-13.28 45.44-25.45 65.68-57.56-36.61-110.11-39.94-170.83-9.05l-17.77 9.84c-38.755-69.39-33.565-162.73.808-232.8C937 948.68 944.2 937.44 952 925.6c-3.966-3.077-8.276-6.539-9.275-11.844-3.223-17.116 30.137-25.209 36.525-37.772 11.967-23.535-12.18-37.332-14.386-46.695 5.755-13.591 23.263-3.305 28.767 5.378 8.211 12.949 7.201 20.788 5.006 34.736 22.41-5.66 27.71-7.483 50.76-.112-1.62-20.186.11-39.548 23.33-45.323z" fill="white"/>
+        <path d="M1167.6 613.4c23.69-2.58 68.43 9.06 90.06 18.68 55.96 24.88 104.11 70.44 126.68 127.97 17.28 43.51 18.92 91.91 1.06 135.36-38.07 92.59-148.8 110.08-187.8 6.712-12.19-6.733-17.89-11.857-27.73-21.634-59.04-59.52-78.15-172.91-2.38-227.38-5.83-24.647-10.57-42.002-7.25-67.591C1162.25 727.1 1170.91 748.57 1197.76 770.25c2.22 8.23 3.23 13.45 4.57 21.91 15.49-15.75 51.04-4.66 30.78 34.07 11.7-14.48 14.35-35.24-2.21-47.13 11.7-21.31 6.92-37.58-10.58-51.15-10.68-35.76-33.11-47.47-64.05-63.7-4.63.81-10.31 1.16-13.67 1.58z" fill="white"/>
+        <path d="M869.9 613.4c7.52-.76 18.25-.2 25.78.48-21.61 12.04-52.66 29.14-60.16 54.84-4.41 15.1-11.94 15.23-18.31 29.02-4.53 9.81-4.49 20.97-1.07 31.09-14.95 14.11-17 32.55-2.78 48.02-2.97 6.13-6.43 14.06-5.37 21 1.952 12.76 17.212 12.455 26.745 15.474 3.475 1.1 7.451 3.95 10.488 6.051.858-7.025 1.682-13.125 2.959-20.077 8-8.365 16.679-12.614 23.14-23.685 24.736-42.386 20.678-78.032 10.976-122.311 3.529 2.672 6.99 5.432 10.381 8.279C916.42 687.99 929.68 720.48 931.64 750.21c3.302 50.27-14.78 94.36-47.06 131.99-11.04 12.05-20.55 18.65-34 27.35-2.8 12.76-8.46 24.71-16.58 34.94-15.24 18.84-39.27 32.32-63.42 34.62-36.39 3.46-67.62-18.98-88.73-46.65-32.71-42.89-26.64-99.93-11.66-150.46 8.905-30.03 23.141-53.7 43.366-77.39C745.58 648 805.84 617.6 869.9 613.4z" fill="white"/>
+        <path d="M845.7 950.6c14.88 6.32 3.59 19.98 13.27 29.05C864.5 985.2 872.2 978 878.5 978.1c11.64.25 16.24 13.92 15.06 23.71-2.84 23.43-8.1 45.95-7.58 69.72-25.67-4.03-42.35-7.76-66.26-18.77-30.45-14.19-55.93-37.22-73.12-66.08 27.73 3.34 53.31-1.5 76.4-17.9C831.3 961 837.9 954.1 845.7 950.6z" fill="white"/>
+        <path d="M1202.8 951.4c3.86 1.02 19.14 15.94 27.21 20.65 22.56 13.14 47.65 20.22 73.41 14.27-16.55 30.23-38.98 49.74-69.04 66.08-26.52 12.7-40.65 15.84-68.98 19.06-.39-10.71-1.39-21.39-3.07-31.99-1.88-12.39-8.51-35.03-6.83-44.75 2.4-13.84 17.6-17.95 27.92-11.94 7.61 4.43 14.13-13.26 12.55-19.12-1.07-3.96 2-8.75 6.72-12.25z" fill="white"/>
+        <path d="M721.1 1012.4c5.03 4.06 16.35 19.6 24.56 26.59 42.95 36.53 83.58 51.3 138.12 58.32.68 13.59 2.59 27.09 5.69 40.34-29.1 0-57.76-7.05-83.58-20.45-41.91-22.07-70.76-59.91-84.79-104.7z" fill="white"/>
+        <path d="M1328.5 1012c.31 11.48-24.36 52.78-33.02 62.6-40.16 45.54-76.97 57.86-134.16 63.5-.57-3.03-5.01-33.38-5.37-41.7-3.63-.17-7.24-.41-10.86-.74-60.42-5.45-113.7-37.68-152.09-83.66z" fill="white"/>
+        <path d="M732.9 1120.5c10.79 7.1 21.16 17.68 33.09 24.8 28.87 17.22 62.24 29.51 96.33 27.11 12.29-.87 23.03-3.55 34.8-6.25l15.91 34.22C846.1 1227 764.4 1181 732.9 1120.5z" fill="white"/>
+        <path d="M1313.9 1123l.66 1.36c-25.9 41.38-66.3 73.56-115.22 81.14-23.51 3.65-41.92 1.11-64.73-3.99 3.61-9.37 12.68-26.04 17.5-35.97 8.44 3.31 17.27 5.54 26.28 6.63 52.21 6.2 96.02-18.8 135.51-49.17z" fill="white"/>
+      </svg>
+      <div class="nav-brand-text">SkillServer<span>Gallery</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="/skills" class="nav-link active">Skills</a>
+      <a href="/sub-agents" class="nav-link">Sub-agents</a>
+      <a href="/docs" class="nav-link">Docs</a>
+      <a href="/publish" class="nav-cta">+ Publish</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">⚡ SkillServer v0.5.0</div>
+    <h1>Browse Skills &amp; Sub-agents<br>for Your Netclaw Agents</h1>
+    <p>Discover, install, and publish reusable capabilities for your self-hosted agents. Built by the community, for the community.</p>
+  </section>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" class="search-input" placeholder="Search skills and sub-agents…" readonly>
+    <span class="search-kbd">⌘K</span>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-icon">📦</div>
+      <div>
+        <div class="stat-number">42</div>
+        <div class="stat-label">Skills</div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-icon">🤖</div>
+      <div>
+        <div class="stat-number">8</div>
+        <div class="stat-label">Sub-agents</div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-icon">📝</div>
+      <div>
+        <div class="stat-number">156</div>
+        <div class="stat-label">Total Files</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Skills -->
+  <section class="section">
+    <div class="section-header">
+      <h2>Recent Skills</h2>
+      <a href="/skills">View all →</a>
+    </div>
+    <div class="skill-list">
+
+      <div class="skill-card">
+        <div class="skill-icon purple">🚀</div>
+        <div class="skill-info">
+          <div class="skill-name">kubernetes-deploy</div>
+          <div class="skill-desc">Deploy pods to K8s clusters using Helm charts and Kustomize overlays</div>
+        </div>
+        <div class="skill-meta">
+          <span class="skill-version">v2.1.0</span>
+          <div class="tags">
+            <span class="tag tag-purple">Deploy</span>
+            <span class="tag tag-blue">Config</span>
+          </div>
+          <span class="skill-stars">★ 47</span>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-icon teal">💬</div>
+        <div class="skill-info">
+          <div class="skill-name">slack-moderation</div>
+          <div class="skill-desc">Moderation tools for Slack workspace management and channel governance</div>
+        </div>
+        <div class="skill-meta">
+          <span class="skill-version">v1.3.2</span>
+          <div class="tags">
+            <span class="tag tag-teal">Slack</span>
+            <span class="tag tag-orange">Ops</span>
+          </div>
+          <span class="skill-stars">★ 38</span>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-icon blue">📋</div>
+        <div class="skill-info">
+          <div class="skill-name">notion-integration</div>
+          <div class="skill-desc">Interact with Notion databases, pages, and templates programmatically</div>
+        </div>
+        <div class="skill-meta">
+          <span class="skill-version">v3.0.1</span>
+          <div class="tags">
+            <span class="tag tag-blue">Notion</span>
+            <span class="tag tag-green">Data</span>
+          </div>
+          <span class="skill-stars">★ 52</span>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-icon orange">🔍</div>
+        <div class="skill-info">
+          <div class="skill-name">search-citation</div>
+          <div class="skill-desc">Web research with structured citation output and source verification</div>
+        </div>
+        <div class="skill-meta">
+          <span class="skill-version">v1.8.0</span>
+          <div class="tags">
+            <span class="tag tag-orange">Search</span>
+            <span class="tag tag-purple">Research</span>
+          </div>
+          <span class="skill-stars">★ 61</span>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-icon pink">🧠</div>
+        <div class="skill-info">
+          <div class="skill-name">memory-management</div>
+          <div class="skill-desc">Cross-session memory tools for storing, retrieving, and organizing agent knowledge</div>
+        </div>
+        <div class="skill-meta">
+          <span class="skill-version">v2.4.3</span>
+          <div class="tags">
+            <span class="tag tag-pink">Memory</span>
+            <span class="tag tag-teal">Core</span>
+          </div>
+          <span class="skill-stars">★ 89</span>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-icon green">📊</div>
+        <div class="skill-info">
+          <div class="skill-name">datadog-monitoring</div>
+          <div class="skill-desc">Create dashboards, alerts, and runbooks from Datadog API interactions</div>
+        </div>
+        <div class="skill-meta">
+          <span class="skill-version">v1.1.0</span>
+          <div class="tags">
+            <span class="tag tag-green">Monitoring</span>
+            <span class="tag tag-blue">API</span>
+          </div>
+          <span class="skill-stars">★ 23</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Recent Sub-agents -->
+  <section class="section">
+    <div class="section-header">
+      <h2>Recent Sub-agents</h2>
+      <a href="/sub-agents">View all →</a>
+    </div>
+    <div class="agent-grid">
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-avatar">🔬</div>
+          <div>
+            <div class="agent-name">code-analyst</div>
+            <div class="agent-type">Specialist Agent</div>
+          </div>
+        </div>
+        <div class="agent-body">Deep codebase analysis with architectural review, dependency mapping, and automated report generation. Specializes in .NET and Node.js projects.</div>
+        <div class="agent-footer">
+          <span class="agent-badge">Main Profile</span>
+          <span class="agent-stat">⏱ 120s timeout</span>
+          <span class="agent-stat">★ 34</span>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-avatar">📚</div>
+          <div>
+            <div class="agent-name">research-assistant</div>
+            <div class="agent-type">Specialist Agent</div>
+          </div>
+        </div>
+        <div class="agent-body">Deep web research with citation tracking, source verification, and multi-round follow-up questions. Outputs structured summaries with inline links.</div>
+        <div class="agent-footer">
+          <span class="agent-badge">Main Profile</span>
+          <span class="agent-stat">⏱ 120s timeout</span>
+          <span class="agent-stat">★ 56</span>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-avatar">🎨</div>
+          <div>
+            <div class="agent-name">ui-prototyper</div>
+            <div class="agent-type">Specialist Agent</div>
+          </div>
+        </div>
+        <div class="agent-body">Generates responsive HTML mockups from wireframe descriptions. Handles brand compliance, accessibility, and cross-browser testing automatically.</div>
+        <div class="agent-footer">
+          <span class="agent-badge teal">Beta</span>
+          <span class="agent-stat">⏱ 90s timeout</span>
+          <span class="agent-stat">★ 19</span>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-avatar">🛡️</div>
+          <div>
+            <div class="agent-name">security-auditor</div>
+            <div class="agent-type">Specialist Agent</div>
+          </div>
+        </div>
+        <div class="agent-body">Scans codebases for vulnerabilities, misconfigurations, and dependency risks. Produces CVE-matched reports with remediation guidance.</div>
+        <div class="agent-footer">
+          <span class="agent-badge">Main Profile</span>
+          <span class="agent-stat">⏱ 180s timeout</span>
+          <span class="agent-stat">★ 41</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">Made with <span class="heart">❤️</span> by Petabridge</div>
+    <div class="footer-links">
+      <a href="https://netclaw.dev">netclaw.dev</a>
+      <span>·</span>
+      <a href="https://petabridge.com">petabridge.com</a>
+      <span>·</span>
+      <a href="https://github.com/netclaw-dev">GitHub</a>
+    </div>
+    <div class="footer-version">SkillServer v0.5.0 · Self-hosted agent infrastructure</div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills - SkillServer Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 2L4 8v16l12 6 12-6V8L16 2z" fill="#512BD4"/><path d="M16 6l-8 4v12l8 4 8-4V10L16 6z" fill="#1a1a2e"/><path d="M14 14c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z" fill="#00D4AA"/><path d="M12 20l4-2 4 2-4 2-4-2z" fill="#00D4AA"/><path d="M10 18l2 2-2 2-2-2 2-2z" fill="#512BD4"/><path d="M22 18l-2 2 2 2 2-2-2-2z" fill="#512BD4"/></svg>
+      <div class="nav-brand-text">SkillServer<span>Gallery</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="skills.html" class="nav-link active">Skills</a>
+      <a href="subagents.html" class="nav-link">Sub-agents</a>
+      <a href="#" class="nav-link">Docs</a>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+
+  <div class="breadcrumb">
+    <a href="index.html">Home</a> <span>›</span> Skills
+  </div>
+
+  <div class="page-header">
+    <div>
+      <h1>All Skills</h1>
+      <p>Browse reusable capabilities for your agents</p>
+    </div>
+    <div class="search-wrap-inline">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" class="search-input" placeholder="Search skills...">
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active">All</button>
+    <button class="filter-btn">Deploy</button>
+    <button class="filter-btn">Slack</button>
+    <button class="filter-btn">Notion</button>
+    <button class="filter-btn">Search</button>
+    <button class="filter-btn">Memory</button>
+    <button class="filter-btn">Monitoring</button>
+    <button class="filter-btn">Config</button>
+    <span class="result-count">42 skills</span>
+  </div>
+
+  <div class="skill-list">
+
+    <a href="skills/kubernetes-deploy.html" class="skill-card">
+      <div class="skill-icon purple">🚀</div>
+      <div class="skill-info">
+        <div class="skill-name">kubernetes-deploy</div>
+        <div class="skill-desc">Deploy pods to K8s clusters using Helm charts and Kustomize overlays</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v2.1.0</span>
+        <div class="tags">
+          <span class="tag tag-purple">Deploy</span>
+          <span class="tag tag-blue">Config</span>
+        </div>
+        <span class="skill-stars">★ 47</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon teal">💬</div>
+      <div class="skill-info">
+        <div class="skill-name">slack-moderation</div>
+        <div class="skill-desc">Moderation tools for Slack workspace management and channel governance</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v1.3.2</span>
+        <div class="tags">
+          <span class="tag tag-teal">Slack</span>
+          <span class="tag tag-orange">Ops</span>
+        </div>
+        <span class="skill-stars">★ 38</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon blue">📋</div>
+      <div class="skill-info">
+        <div class="skill-name">notion-integration</div>
+        <div class="skill-desc">Interact with Notion databases, pages, and templates programmatically</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v3.0.1</span>
+        <div class="tags">
+          <span class="tag tag-blue">Notion</span>
+          <span class="tag tag-green">Data</span>
+        </div>
+        <span class="skill-stars">★ 52</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon orange">🔍</div>
+      <div class="skill-info">
+        <div class="skill-name">search-citation</div>
+        <div class="skill-desc">Web research with structured citation output and source verification</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v1.8.0</span>
+        <div class="tags">
+          <span class="tag tag-orange">Search</span>
+          <span class="tag tag-purple">Research</span>
+        </div>
+        <span class="skill-stars">★ 61</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon pink">🧠</div>
+      <div class="skill-info">
+        <div class="skill-name">memory-management</div>
+        <div class="skill-desc">Cross-session memory tools for storing, retrieving, and organizing agent knowledge</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v2.4.3</span>
+        <div class="tags">
+          <span class="tag tag-pink">Memory</span>
+          <span class="tag tag-teal">Core</span>
+        </div>
+        <span class="skill-stars">★ 89</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon green">📊</div>
+      <div class="skill-info">
+        <div class="skill-name">datadog-monitoring</div>
+        <div class="skill-desc">Create dashboards, alerts, and runbooks from Datadog API interactions</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v1.1.0</span>
+        <div class="tags">
+          <span class="tag tag-green">Monitoring</span>
+          <span class="tag tag-blue">API</span>
+        </div>
+        <span class="skill-stars">★ 23</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon purple">⚙️</div>
+      <div class="skill-info">
+        <div class="skill-name">github-actions</div>
+        <div class="skill-desc">Create and manage GitHub Actions workflows, CI/CD pipelines, and automation</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v2.0.0</span>
+        <div class="tags">
+          <span class="tag tag-purple">CI</span>
+          <span class="tag tag-blue">GitHub</span>
+        </div>
+        <span class="skill-stars">★ 71</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon teal">🐳</div>
+      <div class="skill-info">
+        <div class="skill-name">docker-ops</div>
+        <div class="skill-desc">Container management, multi-stage builds, and Docker Compose orchestration</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v1.5.1</span>
+        <div class="tags">
+          <span class="tag tag-teal">Docker</span>
+          <span class="tag tag-orange">Ops</span>
+        </div>
+        <span class="skill-stars">★ 44</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon blue">📝</div>
+      <div class="skill-info">
+        <div class="skill-name">markdown-writer</div>
+        <div class="skill-desc">Generate well-structured markdown documentation with consistent formatting</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v0.9.0</span>
+        <div class="tags">
+          <span class="tag tag-blue">Docs</span>
+          <span class="tag tag-green">Writing</span>
+        </div>
+        <span class="skill-stars">★ 28</span>
+      </div>
+    </a>
+
+    <a href="#" class="skill-card">
+      <div class="skill-icon orange">🔐</div>
+      <div class="skill-info">
+        <div class="skill-name">secret-scanning</div>
+        <div class="skill-desc">Scan repositories for leaked credentials, API keys, and sensitive data</div>
+      </div>
+      <div class="skill-meta">
+        <span class="skill-version">v1.2.0</span>
+        <div class="tags">
+          <span class="tag tag-orange">Security</span>
+          <span class="tag tag-purple">Scan</span>
+        </div>
+        <span class="skill-stars">★ 63</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="pagination">
+    <button class="page-btn disabled">←</button>
+    <button class="page-btn active">1</button>
+    <button class="page-btn">2</button>
+    <button class="page-btn">3</button>
+    <button class="page-btn">4</button>
+    <button class="page-btn">→</button>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">Made with <span class="heart">❤️</span> by Petabridge</div>
+    <div class="footer-links">
+      <a href="https://netclaw.dev">netclaw.dev</a>
+      <span>·</span>
+      <a href="https://petabridge.com">petabridge.com</a>
+      <span>·</span>
+      <a href="https://github.com/netclaw-dev">GitHub</a>
+    </div>
+    <div class="footer-version">SkillServer v0.5.0 · Self-hosted agent infrastructure</div>
+  </div>
+</footer>
+
+</body>
+</html>

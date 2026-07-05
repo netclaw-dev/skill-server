@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kubernetes-deploy - SkillServer Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 2L4 8v16l12 6 12-6V8L16 2z" fill="#512BD4"/><path d="M16 6l-8 4v12l8 4 8-4V10L16 6z" fill="#1a1a2e"/><path d="M14 14c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z" fill="#00D4AA"/><path d="M12 20l4-2 4 2-4 2-4-2z" fill="#00D4AA"/><path d="M10 18l2 2-2 2-2-2 2-2z" fill="#512BD4"/><path d="M22 18l-2 2 2 2 2-2-2-2z" fill="#512BD4"/></svg>
+      <div class="nav-brand-text">SkillServer<span>Gallery</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="../skills.html" class="nav-link active">Skills</a>
+      <a href="../subagents.html" class="nav-link">Sub-agents</a>
+      <a href="#" class="nav-link">Docs</a>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+
+  <div class="breadcrumb">
+    <a href="../index.html">Home</a> <span>›</span>
+    <a href="../skills.html">Skills</a> <span>›</span>
+    kubernetes-deploy
+  </div>
+
+  <div class="detail-header">
+    <div class="detail-title">
+      <h1>kubernetes-deploy</h1>
+      <span class="detail-version">v2.1.0 <span class="latest">← latest</span></span>
+    </div>
+    <div class="tags" style="margin-bottom:16px">
+      <span class="tag tag-purple">Deploy</span>
+      <span class="tag tag-blue">Config</span>
+    </div>
+    <p class="detail-description">Deploy pods to Kubernetes clusters using Helm charts and Kustomize overlays. Supports multi-cluster deployments, rolling updates, and canary strategies. Integrates with kubectl and Helm 3 for seamless cluster operations.</p>
+    <div class="detail-meta">
+      <div class="meta-item"><span class="meta-label">Versions</span><span class="meta-value">3</span></div>
+      <div class="meta-item"><span class="meta-label">Size</span><span class="meta-value">24 KB</span></div>
+      <div class="meta-item"><span class="meta-label">Published</span><span class="meta-value">2 days ago</span></div>
+      <div class="meta-item"><span class="meta-label">Stars</span><span class="meta-value">★ 47</span></div>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="section-header">
+      <h2>SKILL.md</h2>
+      <button class="copy-btn" onclick="copyToClipboard(this, 'skill-md-content')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button>
+    </div>
+    <div class="code-block"><pre id="skill-md-content">---
+name: kubernetes-deploy
+version: 2.1.0
+description: Deploy pods to K8s clusters using Helm charts and Kustomize overlays
+category: Deploy
+tags: [Deploy, Config]
+type: skill-md
+author: Petabridge
+license: Apache-2.0
+---
+
+# kubernetes-deploy
+
+## Description
+This skill enables Kubernetes deployment operations including
+Helm chart management, Kustomize overlays, and direct kubectl
+interactions.
+
+## Capabilities
+- Deploy Helm charts to target clusters
+- Manage Kustomize overlays for environment-specific configs
+- Execute rolling updates and canary deployments
+- Monitor deployment health and rollback on failure
+
+## Prerequisites
+- kubectl configured with cluster credentials
+- Helm 3 installed
+- Access to target namespace
+
+## Tools
+- kubectl deploy - Deploy resources to cluster
+- helm install - Install Helm chart
+- helm upgrade - Upgrade existing release
+- kubectl rollout - Manage rollout status</pre></div>
+  </section>
+
+  <section class="section">
+    <div class="section-header">
+      <h2>Version History</h2>
+    </div>
+    <div class="version-list">
+      <div class="version-row current">
+        <span class="version-tag latest">v2.1.0</span>
+        <span class="version-date">2 days ago</span>
+        <span class="version-size">24 KB</span>
+      </div>
+      <div class="version-row">
+        <span class="version-tag">v2.0.0</span>
+        <span class="version-date">1 month ago</span>
+        <span class="version-size">22 KB</span>
+      </div>
+      <div class="version-row">
+        <span class="version-tag">v1.0.0</span>
+        <span class="version-date">3 months ago</span>
+        <span class="version-size">18 KB</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+function copyToClipboard(btn, elementId) {
+  var text = document.getElementById(elementId).textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      btn.innerHTML = orig;
+    }, 2000);
+  });
+}
+</script>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">Made with <span class="heart">❤️</span> by Petabridge</div>
+    <div class="footer-links">
+      <a href="https://netclaw.dev">netclaw.dev</a>
+      <span>·</span>
+      <a href="https://petabridge.com">petabridge.com</a>
+      <span>·</span>
+      <a href="https://github.com/netclaw-dev">GitHub</a>
+    </div>
+    <div class="footer-version">SkillServer v0.5.0 · Self-hosted agent infrastructure</div>
+  </div>
+</footer>
+
+</body>
+</html>
