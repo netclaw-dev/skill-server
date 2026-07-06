@@ -82,10 +82,12 @@ public sealed class SkillServerClientNativeManifestTests
 
         var root = await _fixture.Client.GetManifestAsync(ct);
         Assert.NotNull(root);
-        Assert.Equal("/manifest/skills/index.json", root.Links.Skills.Href);
-        Assert.Equal("/manifest/subagents/index.json", root.Links.SubAgents.Href);
+        Assert.Equal("v1", root.ApiVersion);
+        var v1 = root.Versions["v1"];
+        Assert.Equal("/skills/v1/index.json", v1.Skills.Href);
+        Assert.Equal("/subagents/v1/index.json", v1.SubAgents.Href);
 
-        var skillIndex = await _fixture.Client.GetNativeSkillIndexAsync(root.Links.Skills, ct);
+        var skillIndex = await _fixture.Client.GetNativeSkillIndexAsync(v1.Skills, ct);
         Assert.NotNull(skillIndex);
         var skillPageLink = Assert.Single(skillIndex.Pages);
         var skillPage = await _fixture.Client.GetNativeSkillPageAsync(skillPageLink, ct);
@@ -103,7 +105,7 @@ public sealed class SkillServerClientNativeManifestTests
         Assert.Equal(skillDetail.Artifact.Digest, skillDownload.Digest);
         Assert.Contains("# Client Native Manifest Test", Encoding.UTF8.GetString(skillDestination.ToArray()));
 
-        var subAgentIndex = await _fixture.Client.GetNativeSubAgentIndexAsync(root.Links.SubAgents, ct);
+        var subAgentIndex = await _fixture.Client.GetNativeSubAgentIndexAsync(v1.SubAgents, ct);
         Assert.NotNull(subAgentIndex);
         var subAgentPageLink = Assert.Single(subAgentIndex.Pages);
         var subAgentPage = await _fixture.Client.GetNativeSubAgentPageAsync(subAgentPageLink, ct);

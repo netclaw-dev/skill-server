@@ -17,12 +17,17 @@ public static class Endpoints
     {
         app.MapDiscoveryEndpoints();
         app.MapManifestEndpoints();
+        app.MapV1Api();
+        app.MapHealthEndpoints();
+        return app;
+    }
+
+    private static void MapV1Api(this WebApplication app)
+    {
         app.MapSkillEndpoints();
         app.MapSubAgentEndpoints();
         app.MapBlobEndpoints();
         app.MapApiKeyEndpoints();
-        app.MapHealthEndpoints();
-        return app;
     }
 
     private static void MapDiscoveryEndpoints(this WebApplication app)
@@ -38,6 +43,8 @@ public static class Endpoints
 
     private static void MapManifestEndpoints(this WebApplication app)
     {
+        // Root manifest — discovery entry point for HATEOAS clients
+        // Clients hit /manifest.json first, read versions dict, then follow resource links
         app.MapGet("/manifest.json", async (
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -46,9 +53,10 @@ public static class Endpoints
             return Results.Json(manifest, SkillServerJsonContext.Default.NativeRootManifest);
         });
 
-        var manifest = app.MapGroup("/manifest");
+        // Skill manifest endpoints — /skills/v1/*
+        var skillManifest = app.MapGroup("/skills/v1");
 
-        manifest.MapGet("/skills/index.json", async (
+        skillManifest.MapGet("/index.json", async (
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
         {
@@ -56,7 +64,7 @@ public static class Endpoints
             return Results.Json(index, SkillServerJsonContext.Default.NativeSkillCollectionIndex);
         });
 
-        manifest.MapGet("/skills/pages/{page}.json", async (
+        skillManifest.MapGet("/pages/{page}.json", async (
             string page,
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -67,7 +75,7 @@ public static class Endpoints
                 : Results.Json(skillPage, SkillServerJsonContext.Default.NativeSkillCollectionPage);
         });
 
-        manifest.MapGet("/skills/{skillName}/index.json", async (
+        skillManifest.MapGet("/{skillName}/index.json", async (
             string skillName,
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -78,7 +86,7 @@ public static class Endpoints
                 : Results.Json(skill, SkillServerJsonContext.Default.NativeSkillIdentityIndex);
         });
 
-        manifest.MapGet("/skills/{skillName}/versions/{version}.json", async (
+        skillManifest.MapGet("/{skillName}/versions/{version}.json", async (
             string skillName,
             string version,
             NativeManifestGenerator manifestGenerator,
@@ -90,7 +98,10 @@ public static class Endpoints
                 : Results.Json(skillVersion, SkillServerJsonContext.Default.NativeSkillVersionDetail);
         });
 
-        manifest.MapGet("/subagents/index.json", async (
+        // Subagent manifest endpoints — /subagents/v1/*
+        var subagentManifest = app.MapGroup("/subagents/v1");
+
+        subagentManifest.MapGet("/index.json", async (
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
         {
@@ -98,7 +109,7 @@ public static class Endpoints
             return Results.Json(index, SkillServerJsonContext.Default.NativeSubAgentCollectionIndex);
         });
 
-        manifest.MapGet("/subagents/pages/{page}.json", async (
+        subagentManifest.MapGet("/pages/{page}.json", async (
             string page,
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -109,7 +120,7 @@ public static class Endpoints
                 : Results.Json(subAgentPage, SkillServerJsonContext.Default.NativeSubAgentCollectionPage);
         });
 
-        manifest.MapGet("/subagents/{subAgentName}/index.json", async (
+        subagentManifest.MapGet("/{subAgentName}/index.json", async (
             string subAgentName,
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -120,7 +131,7 @@ public static class Endpoints
                 : Results.Json(subAgent, SkillServerJsonContext.Default.NativeSubAgentIdentityIndex);
         });
 
-        manifest.MapGet("/subagents/{subAgentName}/versions/{version}.json", async (
+        subagentManifest.MapGet("/{subAgentName}/versions/{version}.json", async (
             string subAgentName,
             string version,
             NativeManifestGenerator manifestGenerator,
@@ -135,7 +146,7 @@ public static class Endpoints
 
     private static void MapSkillEndpoints(this WebApplication app)
     {
-        var skills = app.MapGroup("/skills");
+        var skills = app.MapGroup("/api/v1/skills");
 
         skills.MapGet("/", ListSkills);
         skills.MapGet("/{name}", GetSkill);
@@ -151,7 +162,7 @@ public static class Endpoints
 
     private static void MapSubAgentEndpoints(this WebApplication app)
     {
-        var subagents = app.MapGroup("/subagents");
+        var subagents = app.MapGroup("/api/v1/subagents");
 
         subagents.MapGet("/", ListSubAgents);
         subagents.MapGet("/{name}", GetSubAgent);
@@ -502,13 +513,13 @@ public static class Endpoints
         var baseUrl = configuration["SkillServer:BaseUrl"]?.TrimEnd('/') ?? "http://localhost:8080";
 
         return Results.Created(
-            $"/skills/{result.Name}/{result.Version}",
+            $"/api/v1/skills/{result.Name}/{result.Version}",
             new SkillUploadResponse
             {
                 Name = result.Name!.Value.Value,
                 Version = result.Version!.Value.Value,
                 Sha256 = result.Digest!.Value.Value,
-                Url = $"{baseUrl}/skills/{result.Name}/{result.Version}/SKILL.md"
+                Url = $"{baseUrl}/api/v1/skills/{result.Name}/{result.Version}/SKILL.md"
             });
     }
 
@@ -736,13 +747,13 @@ public static class Endpoints
 
         var baseUrl = configuration["SkillServer:BaseUrl"]?.TrimEnd('/') ?? "http://localhost:8080";
         return Results.Created(
-            $"/subagents/{result.Name}/{result.Version}",
+            $"/api/v1/subagents/{result.Name}/{result.Version}",
             new SubAgentUploadResponse
             {
                 Name = result.Name!.Value.Value,
                 Version = result.Version!.Value.Value,
                 Sha256 = result.Digest!.Value.Value,
-                Url = $"{baseUrl}/subagents/{result.Name}/{result.Version}/agent.md"
+                Url = $"{baseUrl}/api/v1/subagents/{result.Name}/{result.Version}/agent.md"
             });
     }
 
@@ -781,7 +792,7 @@ public static class Endpoints
 
     private static void MapApiKeyEndpoints(this WebApplication app)
     {
-        var keys = app.MapGroup("/api-keys")
+        var keys = app.MapGroup("/api/v1/api-keys")
             .AddEndpointFilter<ApiKeyEndpointFilter>();
 
         keys.MapPost("/", CreateApiKey);
@@ -806,7 +817,7 @@ public static class Endpoints
         var (rawKey, storedKey) = await apiKeyService.CreateKeyAsync(
             request.Label, request.ExpiresAt, ct);
 
-        return Results.Created($"/api-keys/{storedKey.Id}", new CreateApiKeyResponse
+        return Results.Created($"/api/v1/api-keys/{storedKey.Id}", new CreateApiKeyResponse
         {
             Id = storedKey.Id,
             Label = storedKey.Label,
@@ -852,7 +863,7 @@ public static class Endpoints
 
     private static void MapBlobEndpoints(this WebApplication app)
     {
-        app.MapGet("/blobs/sha256/{digest}", (
+        app.MapGet("/api/v1/blobs/sha256/{digest}", (
             string digest,
             BlobStorage blobStorage) =>
         {

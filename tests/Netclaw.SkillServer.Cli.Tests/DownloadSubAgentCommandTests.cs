@@ -50,8 +50,8 @@ public sealed class DownloadSubAgentCommandTests : IDisposable
 
         Assert.Equal(0, exitCode);
         Assert.Equal(agentMd, await File.ReadAllTextAsync(destination, TestContext.Current.CancellationToken));
-        Assert.Equal("/manifest/subagents/support-agent/versions/1.0.0.json", handler.Requests[0].Path);
-        Assert.Equal("/subagents/support-agent/1.0.0/agent.md", handler.Requests[1].Path);
+        Assert.Equal("/subagents/v1/support-agent/versions/1.0.0.json", handler.Requests[0].Path);
+        Assert.Equal("/api/v1/subagents/support-agent/1.0.0/agent.md", handler.Requests[1].Path);
     }
 
     [Fact]
@@ -115,13 +115,13 @@ public sealed class DownloadSubAgentCommandTests : IDisposable
         Version = "1.0.0",
         Type = SubAgentArtifactTypes.AgentMd,
         Description = "test",
-        Url = "/subagents/support-agent/1.0.0/agent.md",
+        Url = "/api/v1/subagents/support-agent/1.0.0/agent.md",
         Digest = digest,
         Links = new NativeManifestSelfLinks
         {
             Self = new NativeManifestLink
             {
-                Href = "/manifest/subagents/support-agent/versions/1.0.0.json"
+                Href = "/subagents/v1/support-agent/versions/1.0.0.json"
             }
         }
     };

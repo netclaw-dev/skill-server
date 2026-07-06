@@ -49,7 +49,7 @@ public sealed class PublishSubAgentCommandTests : IDisposable
         Assert.Equal(0, exitCode);
         var request = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Post, request.Method);
-        Assert.Equal("/subagents", request.Path);
+        Assert.Equal("/api/v1/subagents", request.Path);
         Assert.Contains("support-agent", request.Body);
         Assert.Contains("1.0.0", request.Body);
     }
@@ -90,9 +90,9 @@ public sealed class PublishSubAgentCommandTests : IDisposable
 
         Assert.Equal(0, exitCode);
         Assert.Equal(HttpMethod.Delete, handler.Requests[0].Method);
-        Assert.Equal("/subagents/support-agent/1.0.0", handler.Requests[0].Path);
+        Assert.Equal("/api/v1/subagents/support-agent/1.0.0", handler.Requests[0].Path);
         Assert.Equal(HttpMethod.Post, handler.Requests[1].Method);
-        Assert.Equal("/subagents", handler.Requests[1].Path);
+        Assert.Equal("/api/v1/subagents", handler.Requests[1].Path);
     }
 
     [Fact]

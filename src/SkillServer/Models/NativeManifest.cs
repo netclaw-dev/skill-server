@@ -19,19 +19,22 @@ public sealed record NativeManifestSelfLinks
     public required NativeManifestLink Self { get; init; }
 }
 
-public sealed record NativeRootManifestLinks
+public sealed record NativeVersionLinks
 {
     [JsonPropertyName("self")]
     public required NativeManifestLink Self { get; init; }
-
-    [JsonPropertyName("rfcSkills")]
-    public required NativeManifestLink RfcSkills { get; init; }
 
     [JsonPropertyName("skills")]
     public required NativeManifestLink Skills { get; init; }
 
     [JsonPropertyName("subagents")]
     public required NativeManifestLink SubAgents { get; init; }
+
+    [JsonPropertyName("skillSearch")]
+    public required NativeManifestLink SkillSearch { get; init; }
+
+    [JsonPropertyName("subagentSearch")]
+    public required NativeManifestLink SubAgentSearch { get; init; }
 }
 
 public sealed record NativeRootManifest
@@ -39,11 +42,11 @@ public sealed record NativeRootManifest
     [JsonPropertyName("$schema")]
     public string Schema { get; init; } = "https://schemas.netclaw.dev/skillserver/manifest/0.1.0";
 
-    [JsonPropertyName("generatedAt")]
-    public required DateTimeOffset GeneratedAt { get; init; }
+    [JsonPropertyName("apiVersion")]
+    public required string ApiVersion { get; init; }
 
-    [JsonPropertyName("links")]
-    public required NativeRootManifestLinks Links { get; init; }
+    [JsonPropertyName("versions")]
+    public required Dictionary<string, NativeVersionLinks> Versions { get; init; }
 }
 
 public sealed record NativeManifestPageLink

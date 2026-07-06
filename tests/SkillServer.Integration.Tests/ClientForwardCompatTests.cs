@@ -46,14 +46,17 @@ public sealed class ClientForwardCompatTests
         const string json = """
             {
               "$schema": "https://netclaw.dev/manifest/v1",
-              "generatedAt": "2026-07-03T00:00:00Z",
+              "apiVersion": "v1",
               "futureTopLevelField": { "anything": [1, 2, 3] },
-              "links": {
-                "self": { "href": "/manifest.json" },
-                "rfcSkills": { "href": "/.well-known/agent-skills/index.json" },
-                "skills": { "href": "/manifest/skills/index.json" },
-                "subagents": { "href": "/manifest/subagents/index.json" },
-                "futureCollection": { "href": "/manifest/future/index.json" }
+              "versions": {
+                "v1": {
+                  "self": { "href": "/manifest.json" },
+                  "skills": { "href": "/skills/v1/index.json" },
+                  "subagents": { "href": "/subagents/v1/index.json" },
+                  "skillSearch": { "href": "/api/v1/skills" },
+                  "subagentSearch": { "href": "/api/v1/subagents" },
+                  "futureCollection": { "href": "/api/v1/future/index.json" }
+                }
               }
             }
             """;
@@ -64,8 +67,8 @@ public sealed class ClientForwardCompatTests
         var manifest = await client.GetManifestAsync(ct);
 
         Assert.NotNull(manifest);
-        Assert.Equal("/manifest/skills/index.json", manifest.Links.Skills.Href);
-        Assert.Equal("/manifest/subagents/index.json", manifest.Links.SubAgents.Href);
+        Assert.Equal("/skills/v1/index.json", manifest.Versions["v1"].Skills.Href);
+        Assert.Equal("/subagents/v1/index.json", manifest.Versions["v1"].SubAgents.Href);
     }
 
     [Fact]
@@ -81,25 +84,25 @@ public sealed class ClientForwardCompatTests
                   "name": "example-skill",
                   "latestVersion": "1.0.0",
                   "versionRange": { "min": "1.0.0", "max": "1.0.0", "count": 1 },
-                  "href": "/manifest/skills/example-skill/index.json",
+                  "href": "/skills/v1/example-skill/index.json",
                   "futureItemField": "ignored"
                 }
               ],
-              "links": { "self": { "href": "/manifest/skills/pages/0.json" } }
+              "links": { "self": { "href": "/skills/v1/pages/0.json" } }
             }
             """;
 
         using var client = CreateClient(json);
         var ct = TestContext.Current.CancellationToken;
 
-        var page = await client.GetNativeSkillPageAsync("manifest/skills/pages/0.json", ct);
+        var page = await client.GetNativeSkillPageAsync("skills/v1/pages/0.json", ct);
 
         Assert.NotNull(page);
         // Unknown kind values round-trip as opaque strings instead of failing.
         Assert.Equal("future-skill-page-kind", page.Kind);
         var item = Assert.Single(page.Items);
         Assert.Equal("example-skill", item.Name);
-        Assert.Equal("/manifest/skills/example-skill/index.json", item.Href);
+        Assert.Equal("/skills/v1/example-skill/index.json", item.Href);
     }
 
     [Fact]
@@ -113,12 +116,12 @@ public sealed class ClientForwardCompatTests
                 "version": "1.0.0",
                 "type": "oci-image",
                 "description": "A future artifact type older clients do not understand.",
-                "url": "/skills/example-skill/1.0.0/artifact.oci",
+                "url": "/api/v1/skills/example-skill/1.0.0/artifact.oci",
                 "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
                 "futureArtifactField": 42
               },
               "routesToSubagent": null,
-              "links": { "self": { "href": "/manifest/skills/example-skill/versions/1.0.0.json" } }
+              "links": { "self": { "href": "/skills/v1/example-skill/versions/1.0.0.json" } }
             }
             """;
 
@@ -126,12 +129,39 @@ public sealed class ClientForwardCompatTests
         var ct = TestContext.Current.CancellationToken;
 
         var detail = await client.GetNativeSkillVersionByHrefAsync(
-            "manifest/skills/example-skill/versions/1.0.0.json", ct);
+            "skills/v1/example-skill/versions/1.0.0.json", ct);
 
         Assert.NotNull(detail);
         // An unrecognized artifact type is surfaced verbatim so a caller can skip
         // it, rather than causing deserialization to throw.
         Assert.Equal("oci-image", detail.Artifact.Type);
         Assert.Null(detail.RoutesToSubagent);
+    }
+
+    [Fact]
+    public async Task ResolveVersionAsync_WithNoCompatibleVersion_ThrowsNotSupportedException()
+    {
+        const string json = """
+            {
+              "$schema": "https://netclaw.dev/manifest/v1",
+              "apiVersion": "v2",
+              "versions": {
+                "v2": {
+                  "self": { "href": "/manifest.json" },
+                  "skills": { "href": "/skills/v2/index.json" },
+                  "subagents": { "href": "/subagents/v2/index.json" },
+                  "skillSearch": { "href": "/api/v2/skills" },
+                  "subagentSearch": { "href": "/api/v2/subagents" }
+                }
+              }
+            }
+            """;
+
+        using var client = CreateClient(json);
+        var ct = TestContext.Current.CancellationToken;
+
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => client.ResolveVersionAsync(ct));
+        Assert.Contains("v2", ex.Message);
+        Assert.Contains("v1", ex.Message);
     }
 }

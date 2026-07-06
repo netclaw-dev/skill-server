@@ -19,19 +19,22 @@ public sealed record NativeManifestSelfLinks
     public NativeManifestLink Self { get; init; } = new();
 }
 
-public sealed record NativeRootManifestLinks
+public sealed record NativeVersionLinks
 {
     [JsonPropertyName("self")]
     public NativeManifestLink Self { get; init; } = new();
-
-    [JsonPropertyName("rfcSkills")]
-    public NativeManifestLink RfcSkills { get; init; } = new();
 
     [JsonPropertyName("skills")]
     public NativeManifestLink Skills { get; init; } = new();
 
     [JsonPropertyName("subagents")]
     public NativeManifestLink SubAgents { get; init; } = new();
+
+    [JsonPropertyName("skillSearch")]
+    public NativeManifestLink SkillSearch { get; init; } = new();
+
+    [JsonPropertyName("subagentSearch")]
+    public NativeManifestLink SubAgentSearch { get; init; } = new();
 }
 
 public sealed record NativeRootManifest
@@ -39,11 +42,11 @@ public sealed record NativeRootManifest
     [JsonPropertyName("$schema")]
     public string Schema { get; init; } = "";
 
-    [JsonPropertyName("generatedAt")]
-    public DateTimeOffset GeneratedAt { get; init; }
+    [JsonPropertyName("apiVersion")]
+    public string ApiVersion { get; init; } = "";
 
-    [JsonPropertyName("links")]
-    public NativeRootManifestLinks Links { get; init; } = new();
+    [JsonPropertyName("versions")]
+    public Dictionary<string, NativeVersionLinks> Versions { get; init; } = new();
 }
 
 public sealed record NativeManifestPageLink
