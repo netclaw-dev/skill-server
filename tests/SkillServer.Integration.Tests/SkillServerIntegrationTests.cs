@@ -211,6 +211,43 @@ public sealed class SkillServerIntegrationTests
     }
 
     [Fact]
+    public async Task UploadSkill_WithListValuedMetadata_IsAcceptedAndSiblingScalarsParsed()
+    {
+        // Regression: a metadata value that is a YAML sequence (e.g. `tags`) used to throw during
+        // frontmatter deserialization, which rejected the entire skill. The parser now coerces such
+        // values to strings, so the upload succeeds and sibling scalar metadata (category) still parses.
+        var ct = TestContext.Current.CancellationToken;
+        var skillName = $"tags-{Guid.NewGuid():N}"[..20];
+
+        var skillContent = $"""
+            ---
+            name: {skillName}
+            description: Skill whose metadata carries a list of tags
+            metadata:
+              category: code-quality
+              tags: [.net, code-review, testing]
+            ---
+
+            # Tagged Skill
+            """;
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(skillName), "name");
+        content.Add(new StringContent("1.0.0"), "version");
+
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(skillContent));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/markdown");
+        content.Add(fileContent, "file", "SKILL.md");
+
+        var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/api/v1/skills", content, ct);
+        Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+
+        var skills = await _fixture.Client.ListSkillsAsync(ct: ct);
+        var uploaded = Assert.Single(skills, s => s.Name == skillName);
+        Assert.Equal("code-quality", uploaded.Category);
+    }
+
+    [Fact]
     public async Task UploadAndRetrieveSubAgent_EndToEnd()
     {
         var ct = TestContext.Current.CancellationToken;

@@ -7,6 +7,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using SkillServer.Data;
 using SkillServer.Models;
+using YamlDotNet.Core;
+using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -32,6 +34,7 @@ public sealed partial class SkillUploadService
         _logger = logger;
         _yamlDeserializer = new DeserializerBuilder()
             .WithNamingConvention(HyphenatedNamingConvention.Instance)
+            .WithTypeConverter(new CoercingStringMapConverter())
             .IgnoreUnmatchedProperties()
             .Build();
     }
@@ -203,6 +206,72 @@ public sealed partial class SkillUploadService
 
     [GeneratedRegex(@"^---\s*\n(.*?)\n---", RegexOptions.Singleline)]
     private static partial Regex FrontmatterRegex();
+
+    /// <summary>
+    /// Deserializes a YAML mapping into a <see cref="Dictionary{TKey,TValue}"/> of strings,
+    /// coercing every value to a string regardless of whether the source node is a scalar,
+    /// a sequence, or a nested mapping. Sequences are joined with ", " and nested mappings are
+    /// flattened to "key: value" pairs.
+    /// </summary>
+    /// <remarks>
+    /// Without this, a metadata value that is anything other than a plain scalar (for example a
+    /// list of tags) causes the default deserializer to throw, which discards the entire skill.
+    /// Coercing to a string instead keeps the skill valid and preserves the information.
+    /// </remarks>
+    private sealed class CoercingStringMapConverter : IYamlTypeConverter
+    {
+        public bool Accepts(Type type) => type == typeof(Dictionary<string, string>);
+
+        public object ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            // A `metadata:` key with no value deserializes as a null scalar; treat it as empty.
+            if (parser.TryConsume<Scalar>(out _))
+                return result;
+
+            parser.Consume<MappingStart>();
+            while (!parser.TryConsume<MappingEnd>(out _))
+            {
+                var key = parser.Consume<Scalar>().Value;
+                result[key] = ReadValueAsString(parser);
+            }
+
+            return result;
+        }
+
+        private static string ReadValueAsString(IParser parser)
+        {
+            if (parser.TryConsume<Scalar>(out var scalar))
+                return scalar.Value;
+
+            if (parser.TryConsume<SequenceStart>(out _))
+            {
+                var items = new List<string>();
+                while (!parser.TryConsume<SequenceEnd>(out _))
+                    items.Add(ReadValueAsString(parser));
+                return string.Join(", ", items);
+            }
+
+            if (parser.TryConsume<MappingStart>(out _))
+            {
+                var pairs = new List<string>();
+                while (!parser.TryConsume<MappingEnd>(out _))
+                {
+                    var nestedKey = parser.Consume<Scalar>().Value;
+                    pairs.Add($"{nestedKey}: {ReadValueAsString(parser)}");
+                }
+                return string.Join(", ", pairs);
+            }
+
+            // Anchors, aliases, or any node shape we don't model: skip without throwing.
+            parser.SkipThisAndNestedEvents();
+            return string.Empty;
+        }
+
+        public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
+            => throw new NotSupportedException($"{nameof(CoercingStringMapConverter)} is read-only.");
+    }
 }
 
 public readonly record struct SkillResourceUpload(ResourcePath Path, Stream Content, int? UnixMode);

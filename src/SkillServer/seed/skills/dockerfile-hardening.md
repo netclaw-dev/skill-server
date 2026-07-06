@@ -4,9 +4,8 @@ description: Review and harden Dockerfiles for security, image size, build repro
 license: Apache-2.0
 metadata:
   category: security
-  subagent: security-auditor
   version: "1.0"
-  tags: "docker, container-security, ci, devops"
+  tags: [docker, container-security, ci, devops]
 ---
 
 # Dockerfile Hardening
