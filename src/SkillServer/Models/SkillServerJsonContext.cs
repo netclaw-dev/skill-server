@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="SkillServerJsonContext.cs" company="Petabridge, LLC">
 //      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -34,6 +34,7 @@ namespace SkillServer.Models;
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateResponseItem>))]
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(NativeRootManifest))]
+[JsonSerializable(typeof(NativeVersionLinks))]
 [JsonSerializable(typeof(NativeSkillCollectionIndex))]
 [JsonSerializable(typeof(NativeSkillCollectionPage))]
 [JsonSerializable(typeof(NativeSkillIdentityIndex))]

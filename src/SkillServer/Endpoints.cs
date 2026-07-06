@@ -38,7 +38,9 @@ public static class Endpoints
 
     private static void MapManifestEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/v1/manifest.json", async (
+        // Root manifest — discovery entry point for HATEOAS clients
+        // Clients hit /manifest.json first, read versions dict, then follow resource links
+        app.MapGet("/manifest.json", async (
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
         {
@@ -46,9 +48,10 @@ public static class Endpoints
             return Results.Json(manifest, SkillServerJsonContext.Default.NativeRootManifest);
         });
 
-        var manifest = app.MapGroup("/api/v1/manifest");
+        // Skill manifest endpoints — /skills/v1/*
+        var skillManifest = app.MapGroup("/skills/v1");
 
-        manifest.MapGet("/skills/index.json", async (
+        skillManifest.MapGet("/index.json", async (
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
         {
@@ -56,7 +59,7 @@ public static class Endpoints
             return Results.Json(index, SkillServerJsonContext.Default.NativeSkillCollectionIndex);
         });
 
-        manifest.MapGet("/skills/pages/{page}.json", async (
+        skillManifest.MapGet("/pages/{page}.json", async (
             string page,
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -67,7 +70,7 @@ public static class Endpoints
                 : Results.Json(skillPage, SkillServerJsonContext.Default.NativeSkillCollectionPage);
         });
 
-        manifest.MapGet("/skills/{skillName}/index.json", async (
+        skillManifest.MapGet("/{skillName}/index.json", async (
             string skillName,
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -78,7 +81,7 @@ public static class Endpoints
                 : Results.Json(skill, SkillServerJsonContext.Default.NativeSkillIdentityIndex);
         });
 
-        manifest.MapGet("/skills/{skillName}/versions/{version}.json", async (
+        skillManifest.MapGet("/{skillName}/versions/{version}.json", async (
             string skillName,
             string version,
             NativeManifestGenerator manifestGenerator,
@@ -90,7 +93,10 @@ public static class Endpoints
                 : Results.Json(skillVersion, SkillServerJsonContext.Default.NativeSkillVersionDetail);
         });
 
-        manifest.MapGet("/subagents/index.json", async (
+        // Subagent manifest endpoints — /subagents/v1/*
+        var subagentManifest = app.MapGroup("/subagents/v1");
+
+        subagentManifest.MapGet("/index.json", async (
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
         {
@@ -98,7 +104,7 @@ public static class Endpoints
             return Results.Json(index, SkillServerJsonContext.Default.NativeSubAgentCollectionIndex);
         });
 
-        manifest.MapGet("/subagents/pages/{page}.json", async (
+        subagentManifest.MapGet("/pages/{page}.json", async (
             string page,
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -109,7 +115,7 @@ public static class Endpoints
                 : Results.Json(subAgentPage, SkillServerJsonContext.Default.NativeSubAgentCollectionPage);
         });
 
-        manifest.MapGet("/subagents/{subAgentName}/index.json", async (
+        subagentManifest.MapGet("/{subAgentName}/index.json", async (
             string subAgentName,
             NativeManifestGenerator manifestGenerator,
             CancellationToken ct) =>
@@ -120,7 +126,7 @@ public static class Endpoints
                 : Results.Json(subAgent, SkillServerJsonContext.Default.NativeSubAgentIdentityIndex);
         });
 
-        manifest.MapGet("/subagents/{subAgentName}/versions/{version}.json", async (
+        subagentManifest.MapGet("/{subAgentName}/versions/{version}.json", async (
             string subAgentName,
             string version,
             NativeManifestGenerator manifestGenerator,

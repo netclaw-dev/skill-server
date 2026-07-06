@@ -1,24 +1,36 @@
 # Native Manifest Specification
 
-Status: target design. `/manifest.json` is documented in README today but is not implemented in the current server route map.
+Status: Implemented. `/manifest.json` is the root discovery endpoint for SkillServer-aware clients.
 
-The native manifest is SkillServer's richer, non-RFC sync feed. It must not replace the Cloudflare Agent Skills Discovery RFC feed. Instead, it provides a linked catalog for SkillServer-aware clients that need pagination, version history, sub-agent definitions, and additional metadata.
+The native manifest is SkillServer's versioned, HATEOAS-style sync feed. It must not replace the Cloudflare Agent Skills Discovery RFC feed (`/.well-known/agent-skills/index.json`). Instead, it provides a linked catalog for SkillServer-aware clients that need version negotiation, search, version history, sub-agent definitions, and additional metadata.
 
 ## Goals
 
-- Keep `/.well-known/agent-skills/index.json` as the standards-compatible skill discovery projection.
 - Add `/manifest.json` as a native entry point for SkillServer-aware clients.
-- Use HATEOAS-style links with path-based pagination.
-- Reuse the RFC skill artifact shape for every skill version.
-- Publish sub-agents as first-class native resources, outside the RFC skill feed.
-- Let clients follow links instead of constructing pagination URLs.
+- Use HATEOAS-style links with versioned path prefixes.
+- Support API version negotiation: client picks the most recent version it supports.
+- Expose search endpoints for discovery without full enumeration.
+- Publish sub-agents as first-class native resources.
+- Let clients follow links instead of constructing URLs.
 
 ## Non-Goals
 
 - Do not list sub-agents in the Cloudflare RFC skill feed.
+- Do not include the RFC feed in the native manifest (it exists independently).
 - Do not create a separate skill install format for native clients.
 - Do not define a general transitive dependency resolver in the first version.
-- Do not require clients to understand query-string cursors.
+
+## Version Negotiation
+
+The manifest declares which API versions are available. Clients should:
+
+1. Know which versions they support (e.g., `["v1"]`).
+2. Fetch `/manifest.json`.
+3. Find the most recent version from the intersection of client-supported and server-available versions.
+4. Use that version's links for all subsequent requests.
+5. If no supported version is found, throw `NotSupportedException` or fall back to the oldest available version.
+
+When a new API version ships, older clients continue to work against their supported version. New clients automatically use the newest version they understand.
 
 ## Endpoint Shape
 
@@ -28,40 +40,45 @@ The stable entry point is:
 GET /manifest.json
 ```
 
-The manifest tree uses path prefixes for collection and page navigation:
+The manifest tree uses versioned path prefixes for collection and page navigation:
 
 ```text
 /manifest.json
-/manifest/skills/index.json
-/manifest/skills/pages/a-f.json
-/manifest/skills/{skillName}/index.json
-/manifest/skills/{skillName}/versions/{version}.json
-/manifest/subagents/index.json
-/manifest/subagents/pages/a-f.json
-/manifest/subagents/{subagentName}/index.json
-/manifest/subagents/{subagentName}/versions/{version}.json
+/skills/v1/index.json
+/skills/v1/pages/all.json
+/skills/v1/{skillName}/index.json
+/skills/v1/{skillName}/versions/{version}.json
+/subagents/v1/index.json
+/subagents/v1/pages/all.json
+/subagents/v1/{subagentName}/index.json
+/subagents/v1/{subagentName}/versions/{version}.json
 ```
 
 Clients must follow returned `href` values. The path structure is readable and stable, but the server owns pagination boundaries.
 
 ## Root Manifest
 
-`/manifest.json` links to the native collections exposed by the registry.
+`/manifest.json` links to the native collections exposed by the registry, organized by API version.
 
 ```json
 {
   "$schema": "https://schemas.netclaw.dev/skillserver/manifest/0.1.0",
-  "generatedAt": "2026-06-29T12:00:00Z",
-  "links": {
-    "self": { "href": "/manifest.json" },
-    "rfcSkills": { "href": "/.well-known/agent-skills/index.json" },
-    "skills": { "href": "/manifest/skills/index.json" },
-    "subagents": { "href": "/manifest/subagents/index.json" }
+  "apiVersion": "v1",
+  "versions": {
+    "v1": {
+      "self": { "href": "/manifest.json" },
+      "skills": { "href": "/skills/v1/index.json" },
+      "subagents": { "href": "/subagents/v1/index.json" },
+      "skillSearch": { "href": "/api/v1/skills" },
+      "subagentSearch": { "href": "/api/v1/subagents" }
+    }
   }
 }
 ```
 
-Clients that do not understand a linked collection should ignore it.
+The `apiVersion` field indicates the currently recommended version. The `versions` object contains all available versions, keyed by version tag. When v2 ships, a `"v2": { ... }` entry is added.
+
+The RFC feed (`/.well-known/agent-skills/index.json`) is a separate standard and is not included in the manifest.
 
 ## Collection Index
 
@@ -71,22 +88,18 @@ A collection index links to one or more server-defined pages.
 {
   "kind": "skill-index",
   "links": {
-    "self": { "href": "/manifest/skills/index.json" }
+    "self": { "href": "/skills/v1/index.json" }
   },
   "pages": [
     {
-      "range": "a-f",
-      "href": "/manifest/skills/pages/a-f.json"
-    },
-    {
-      "range": "g-m",
-      "href": "/manifest/skills/pages/g-m.json"
+      "range": "all",
+      "href": "/skills/v1/pages/all.json"
     }
   ]
 }
 ```
 
-The `range` value is informational. Clients should not assume it is alphabetical or stable across registries.
+The `range` value is informational. The server may replace a single "all" page with multiple pages in the future without breaking clients.
 
 ## Collection Page
 
@@ -95,7 +108,7 @@ A collection page lists identities and coarse version bounds.
 ```json
 {
   "kind": "skill-page",
-  "range": "a-f",
+  "range": "all",
   "items": [
     {
       "name": "support-triage",
@@ -105,11 +118,11 @@ A collection page lists identities and coarse version bounds.
         "max": "1.2.0",
         "count": 4
       },
-      "href": "/manifest/skills/support-triage/index.json"
+      "href": "/skills/v1/support-triage/index.json"
     }
   ],
   "links": {
-    "self": { "href": "/manifest/skills/pages/a-f.json" }
+    "self": { "href": "/skills/v1/pages/all.json" }
   }
 }
 ```
@@ -130,11 +143,11 @@ An identity index lists all versions for one skill or sub-agent.
       "version": "1.2.0",
       "publishedAt": "2026-06-29T12:00:00Z",
       "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-      "href": "/manifest/skills/support-triage/versions/1.2.0.json"
+      "href": "/skills/v1/support-triage/versions/1.2.0.json"
     }
   ],
   "links": {
-    "self": { "href": "/manifest/skills/support-triage/index.json" }
+    "self": { "href": "/skills/v1/support-triage/index.json" }
   }
 }
 ```
@@ -142,7 +155,7 @@ An identity index lists all versions for one skill or sub-agent.
 ## Skill Version Detail
 
 Skill version details wrap the exact artifact object that the RFC feed exposes for the same skill version.
-Resourceful skill artifacts use SkillServer's canonical `.zip` archive route, `/skills/{skillName}/{version}/archive.zip`.
+Resourceful skill artifacts use SkillServer's canonical `.zip` archive route, `/api/v1/skills/{skillName}/{version}/archive.zip`.
 
 ```json
 {
@@ -152,15 +165,15 @@ Resourceful skill artifacts use SkillServer's canonical `.zip` archive route, `/
     "version": "1.2.0",
     "type": "archive",
     "description": "Triage support tickets and produce a concise diagnostic plan.",
-    "url": "/skills/support-triage/1.2.0/archive.zip",
+    "url": "/api/v1/skills/support-triage/1.2.0/archive.zip",
     "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
   },
   "routesToSubagent": {
     "name": "technical-support-diagnostician",
-    "href": "/manifest/subagents/technical-support-diagnostician/index.json"
+    "href": "/subagents/v1/technical-support-diagnostician/index.json"
   },
   "links": {
-    "self": { "href": "/manifest/skills/support-triage/versions/1.2.0.json" }
+    "self": { "href": "/skills/v1/support-triage/versions/1.2.0.json" }
   }
 }
 ```
@@ -178,26 +191,44 @@ Sub-agent version details use the same content-addressed artifact semantics, but
   "version": "1.0.0",
   "type": "agent-md",
   "description": "Diagnose incomplete technical support tickets and identify missing evidence.",
-  "url": "/subagents/technical-support-diagnostician/1.0.0/agent.md",
+  "url": "/api/v1/subagents/technical-support-diagnostician/1.0.0/agent.md",
   "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
   "links": {
-    "self": { "href": "/manifest/subagents/technical-support-diagnostician/versions/1.0.0.json" }
+    "self": { "href": "/subagents/v1/technical-support-diagnostician/versions/1.0.0.json" }
   }
 }
 ```
+
+## Search
+
+The manifest exposes search endpoints that clients can use for discovery without full enumeration:
+
+```json
+{
+  "skillSearch": { "href": "/api/v1/skills" },
+  "subagentSearch": { "href": "/api/v1/subagents" }
+}
+```
+
+Clients append query parameters:
+- `?q={query}` — full-text search
+- `?skip={skip}&take={take}` — pagination
+
+The search endpoint is the primary discovery mechanism. Full enumeration via the collection index is supported but may be slower for large registries.
 
 ## Sync Semantics
 
 Native clients should:
 
 1. Fetch `/manifest.json`.
-2. Follow collection links for supported resource kinds.
-3. Follow page links to identity indexes.
-4. Compare version and digest with local sync state.
-5. Download changed artifacts from `url`.
-6. Verify `digest` before installing any artifact.
-7. Keep existing local artifacts when a network request fails.
-8. Prune server-synced artifacts only after a successful collection sync confirms removal.
+2. Resolve the best supported API version.
+3. Follow collection links for supported resource kinds.
+4. Follow page links to identity indexes.
+5. Compare version and digest with local sync state.
+6. Download changed artifacts from `url`.
+7. Verify `digest` before installing any artifact.
+8. Keep existing local artifacts when a network request fails.
+9. Prune server-synced artifacts only after a successful collection sync confirms removal.
 
 Clients must ignore unsupported resource kinds and unknown fields.
 

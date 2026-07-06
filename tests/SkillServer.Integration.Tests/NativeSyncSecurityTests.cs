@@ -121,9 +121,9 @@ public sealed class NativeSyncSecurityTests
     // ---- Task 4: manifest + artifact reads stay open (auth is enabled) ---
 
     [Theory]
-    [InlineData("/api/v1/manifest.json")]
-    [InlineData("/api/v1/manifest/skills/index.json")]
-    [InlineData("/api/v1/manifest/subagents/index.json")]
+    [InlineData("/manifest.json")]
+    [InlineData("/skills/v1/index.json")]
+    [InlineData("/subagents/v1/index.json")]
     public async Task ManifestEndpoints_AreReadableWithoutAuth(string path)
     {
         var ct = TestContext.Current.CancellationToken;

@@ -50,7 +50,7 @@ public sealed class DownloadSubAgentCommandTests : IDisposable
 
         Assert.Equal(0, exitCode);
         Assert.Equal(agentMd, await File.ReadAllTextAsync(destination, TestContext.Current.CancellationToken));
-        Assert.Equal("/api/v1/manifest/subagents/support-agent/versions/1.0.0.json", handler.Requests[0].Path);
+        Assert.Equal("/subagents/v1/support-agent/versions/1.0.0.json", handler.Requests[0].Path);
         Assert.Equal("/api/v1/subagents/support-agent/1.0.0/agent.md", handler.Requests[1].Path);
     }
 
@@ -121,7 +121,7 @@ public sealed class DownloadSubAgentCommandTests : IDisposable
         {
             Self = new NativeManifestLink
             {
-                Href = "/api/v1/manifest/subagents/support-agent/versions/1.0.0.json"
+                Href = "/subagents/v1/support-agent/versions/1.0.0.json"
             }
         }
     };

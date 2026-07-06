@@ -33,7 +33,7 @@ SkillServer implements Agent Skills standards and defines native extensions for 
 |---------------|---------|
 | [Skill Packages](docs/specs/skills.md) | How to author and publish AgentSkills.io-compatible SkillServer skills. |
 | [Sub-Agent Packages](docs/specs/subagents.md) | How NetClaw sub-agent definitions are authored and how SkillServer will publish them. |
-| [Native Manifest](docs/specs/native-manifest.md) | Planned non-RFC sync feed for skills, sub-agents, and future native resources. |
+| [Native Manifest](docs/specs/native-manifest.md) | HATEOAS-style sync feed for skills, sub-agents, and future native resources with API version negotiation. |
 | [Security And Trust Model](docs/specs/security.md) | Trust boundaries, authentication, digest verification, and sync safety for native sync. |
 | [Sub-Agent Sync Epic](docs/epics/subagent-sync.md) | Requirements and proposed GitHub issue breakdown for native manifest and sub-agent sync. |
 
@@ -70,7 +70,7 @@ Configuration is via environment variables or `appsettings.json`:
 | Endpoint | Description |
 |----------|-------------|
 | `GET /.well-known/agent-skills/index.json` | RFC-compliant skill index |
-| `GET /manifest.json` | Planned NetClaw-native manifest; see [Native Manifest](docs/specs/native-manifest.md) |
+| `GET /manifest.json` | Native manifest with API version negotiation; see [Native Manifest](docs/specs/native-manifest.md) |
 
 ### Skills
 
@@ -174,9 +174,62 @@ var updates = await client.CheckUpdatesAsync([
 
 See the [client library README](src/Netclaw.SkillClient/README.md) for full API documentation.
 
+## Native Manifest
+
+The native manifest (`/manifest.json`) is a HATEOAS-style discovery endpoint for SkillServer-aware clients. It provides API version negotiation and linked navigation to skills and sub-agents.
+
+### Version Negotiation
+
+The manifest declares available API versions. Clients negotiate to the most recent compatible version:
+
+```json
+{
+  "apiVersion": "v1",
+  "versions": {
+    "v1": {
+      "skills": { "href": "/skills/v1/index.json" },
+      "subagents": { "href": "/subagents/v1/index.json" },
+      "skillSearch": { "href": "/api/v1/skills" },
+      "subagentSearch": { "href": "/api/v1/subagents" }
+    }
+  }
+}
+```
+
+Clients follow links to traverse collections. The server owns pagination boundaries — clients never construct page URLs.
+
+### Search
+
+The manifest exposes search endpoints for discovery:
+
+```text
+/api/v1/skills?q={query}&skip={skip}&take={take}
+/api/v1/subagents?q={query}&skip={skip}&take={take}
+```
+
+Search is the primary discovery mechanism. Full enumeration via the collection index is also supported.
+
+### Client Library
+
+The `NativeManifestClient` class provides version-aware manifest access:
+
+```csharp
+using var manifestClient = new NativeManifestClient("http://localhost:8080");
+
+// Fetch manifest with automatic version negotiation
+var manifest = await manifestClient.GetNativeManifestAsync();
+
+// Resolve best supported version
+var skillLinks = manifestClient.ResolveVersion(manifest, "v1");
+
+// Browse skills
+var skillIndex = await manifestClient.GetNativeSkillIndexAsync(skillLinks);
+var skillDetail = await manifestClient.GetNativeSkillDetailAsync(skillLinks, "my-skill", "1.0.0");
+```
+
 ## NetClaw Integration
 
-Current NetClaw feed sync uses the RFC skill discovery endpoint. The planned native manifest will add richer skill metadata and sub-agent sync.
+Current NetClaw feed sync uses the RFC skill discovery endpoint. The native manifest provides richer skill metadata, sub-agent sync, and API version negotiation.
 
 Add SkillServer as a skill source using the configured feed URL for your NetClaw version:
 

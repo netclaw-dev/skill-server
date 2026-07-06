@@ -9,17 +9,47 @@ namespace Netclaw.SkillClient;
 
 public sealed partial class SkillServerClient
 {
+    private static readonly string[] SupportedVersions = ["v1"];
+    private NativeVersionLinks? _resolvedLinks;
+
     public async Task<NativeRootManifest?> GetManifestAsync(CancellationToken ct = default)
     {
         return await _httpClient.GetFromJsonAsync(
-            Api("manifest.json"),
+            "/manifest.json",
             SkillServerClientJsonContext.Default.NativeRootManifest,
             ct);
     }
 
+    /// <summary>
+    /// Resolves the best supported API version from the manifest.
+    /// Client knows which versions it supports, picks the most recent
+    /// version the server also supports.
+    /// </summary>
+    public async Task<NativeVersionLinks> ResolveVersionAsync(CancellationToken ct = default)
+    {
+        if (_resolvedLinks is not null)
+            return _resolvedLinks;
+
+        var manifest = await GetManifestAsync(ct)
+            ?? throw new InvalidOperationException("Failed to fetch manifest from server.");
+
+        foreach (var version in SupportedVersions.Reverse())
+        {
+            if (manifest.Versions.TryGetValue(version, out var links))
+            {
+                _resolvedLinks = links;
+                return links;
+            }
+        }
+
+        throw new NotSupportedException(
+            $"Server supports [{string.Join(", ", manifest.Versions.Keys)}] " +
+            $"but client supports [{string.Join(", ", SupportedVersions)}].");
+    }
+
     public Task<NativeSkillCollectionIndex?> GetNativeSkillIndexAsync(CancellationToken ct = default)
     {
-        return GetNativeSkillIndexByHrefAsync(Api("manifest/skills/index.json"), ct);
+        return GetNativeSkillIndexByHrefAsync("/skills/v1/index.json", ct);
     }
 
     public Task<NativeSkillCollectionIndex?> GetNativeSkillIndexAsync(
@@ -66,7 +96,7 @@ public sealed partial class SkillServerClient
     public Task<NativeSkillIdentityIndex?> GetNativeSkillIdentityAsync(string name, CancellationToken ct = default)
     {
         return GetNativeSkillIdentityByHrefAsync(
-            $"manifest/skills/{Uri.EscapeDataString(name)}/index.json",
+            $"/skills/v1/{Uri.EscapeDataString(name)}/index.json",
             ct);
     }
 
@@ -93,7 +123,7 @@ public sealed partial class SkillServerClient
         CancellationToken ct = default)
     {
         return GetNativeSkillVersionByHrefAsync(
-            $"manifest/skills/{Uri.EscapeDataString(name)}/versions/{Uri.EscapeDataString(version)}.json",
+            $"/skills/v1/{Uri.EscapeDataString(name)}/versions/{Uri.EscapeDataString(version)}.json",
             ct);
     }
 
@@ -109,7 +139,7 @@ public sealed partial class SkillServerClient
 
     public Task<NativeSubAgentCollectionIndex?> GetNativeSubAgentIndexAsync(CancellationToken ct = default)
     {
-        return GetNativeSubAgentIndexByHrefAsync(Api("manifest/subagents/index.json"), ct);
+        return GetNativeSubAgentIndexByHrefAsync("/subagents/v1/index.json", ct);
     }
 
     public Task<NativeSubAgentCollectionIndex?> GetNativeSubAgentIndexAsync(
@@ -158,7 +188,7 @@ public sealed partial class SkillServerClient
         CancellationToken ct = default)
     {
         return GetNativeSubAgentIdentityByHrefAsync(
-            $"manifest/subagents/{Uri.EscapeDataString(name)}/index.json",
+            $"/subagents/v1/{Uri.EscapeDataString(name)}/index.json",
             ct);
     }
 
@@ -185,7 +215,7 @@ public sealed partial class SkillServerClient
         CancellationToken ct = default)
     {
         return GetNativeSubAgentVersionByHrefAsync(
-            $"manifest/subagents/{Uri.EscapeDataString(name)}/versions/{Uri.EscapeDataString(version)}.json",
+            $"/subagents/v1/{Uri.EscapeDataString(name)}/versions/{Uri.EscapeDataString(version)}.json",
             ct);
     }
 

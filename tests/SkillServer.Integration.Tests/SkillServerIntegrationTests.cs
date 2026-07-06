@@ -164,15 +164,16 @@ public sealed class SkillServerIntegrationTests
         var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/api/v1/skills", content, ct);
         Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
 
-        var root = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeRootManifest>("/api/v1/manifest.json", ct);
+        var root = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeRootManifest>("/manifest.json", ct);
         Assert.NotNull(root);
-        Assert.Equal("/api/v1/manifest.json", root.Links.Self.Href);
-        Assert.Equal("/.well-known/agent-skills/index.json", root.Links.RfcSkills.Href);
-        Assert.Equal("/api/v1/manifest/skills/index.json", root.Links.Skills.Href);
-        Assert.Equal("/api/v1/manifest/subagents/index.json", root.Links.SubAgents.Href);
+        Assert.Equal("v1", root.ApiVersion);
+        var v1 = root.Versions["v1"];
+        Assert.Equal("/manifest.json", v1.Self.Href);
+        Assert.Equal("/skills/v1/index.json", v1.Skills.Href);
+        Assert.Equal("/subagents/v1/index.json", v1.SubAgents.Href);
 
         var skillIndex = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillCollectionIndex>(
-            root.Links.Skills.Href, ct);
+            v1.Skills.Href, ct);
         Assert.NotNull(skillIndex);
         Assert.Equal("skill-index", skillIndex.Kind);
         var pageLink = Assert.Single(skillIndex.Pages);
@@ -182,7 +183,7 @@ public sealed class SkillServerIntegrationTests
         Assert.NotNull(skillPage);
         var item = Assert.Single(skillPage.Items, i => i.Name == skillName);
         Assert.Equal("1.0.0", item.LatestVersion);
-        Assert.Equal($"/api/v1/manifest/skills/{skillName}/index.json", item.Href);
+        Assert.Equal($"/skills/v1/{skillName}/index.json", item.Href);
 
         var identity = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillIdentityIndex>(
             item.Href, ct);
@@ -196,7 +197,7 @@ public sealed class SkillServerIntegrationTests
         Assert.Equal("skill-version", detail.Kind);
         Assert.NotNull(detail.RoutesToSubagent);
         Assert.Equal("technical-support-diagnostician", detail.RoutesToSubagent!.Name);
-        Assert.Equal("/api/v1/manifest/subagents/technical-support-diagnostician/index.json", detail.RoutesToSubagent.Href);
+        Assert.Equal("/subagents/v1/technical-support-diagnostician/index.json", detail.RoutesToSubagent.Href);
 
         var rfcIndex = await _fixture.Client.GetRfcIndexAsync(ct);
         Assert.NotNull(rfcIndex);
@@ -295,12 +296,13 @@ public sealed class SkillServerIntegrationTests
         var uploadResponse = await _fixture.AuthenticatedHttpClient.PostAsync("/api/v1/subagents", content, ct);
         Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
 
-        var root = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeRootManifest>("/api/v1/manifest.json", ct);
+        var root = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeRootManifest>("/manifest.json", ct);
         Assert.NotNull(root);
-        Assert.Equal("/api/v1/manifest/subagents/index.json", root.Links.SubAgents.Href);
+        var v1 = root.Versions["v1"];
+        Assert.Equal("/subagents/v1/index.json", v1.SubAgents.Href);
 
         var subAgentIndex = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSubAgentCollectionIndex>(
-            root.Links.SubAgents.Href, ct);
+            v1.SubAgents.Href, ct);
         Assert.NotNull(subAgentIndex);
         Assert.Equal("subagent-index", subAgentIndex.Kind);
         var pageLink = Assert.Single(subAgentIndex.Pages);
@@ -311,7 +313,7 @@ public sealed class SkillServerIntegrationTests
         Assert.Equal("subagent-page", subAgentPage.Kind);
         var item = Assert.Single(subAgentPage.Items, i => i.Name == subAgentName);
         Assert.Equal("1.0.0", item.LatestVersion);
-        Assert.Equal($"/api/v1/manifest/subagents/{subAgentName}/index.json", item.Href);
+        Assert.Equal($"/subagents/v1/{subAgentName}/index.json", item.Href);
 
         var identity = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSubAgentIdentityIndex>(
             item.Href, ct);
@@ -1016,7 +1018,7 @@ public sealed class SkillServerIntegrationTests
         Assert.Equal(indexSkill.Digest, ComputeSha256Digest(archiveBytes));
 
         var nativeDetail = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.NativeSkillVersionDetail>(
-            $"/api/v1/manifest/skills/{skillName}/versions/1.0.0.json", ct);
+            $"/skills/v1/{skillName}/versions/1.0.0.json", ct);
         Assert.NotNull(nativeDetail);
         Assert.Equal(indexSkill.Type, nativeDetail.Artifact.Type);
         Assert.Equal(indexSkill.Url, nativeDetail.Artifact.Url);
