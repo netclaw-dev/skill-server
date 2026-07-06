@@ -42,8 +42,11 @@ public sealed class SkillArchiveBuilderTests
             "scripts/setup.sh"
         ], archive.Entries.Select(e => e.FullName).ToArray());
 
+        // ZIP stores DOS date/time with no timezone, so LastWriteTime reads back with the local
+        // offset. Assert on the wall-clock component, which is what the format round-trips
+        // deterministically across machines regardless of their timezone.
         Assert.All(archive.Entries, entry =>
-            Assert.Equal(new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero), entry.LastWriteTime));
+            Assert.Equal(new DateTime(1980, 1, 1, 0, 0, 0), entry.LastWriteTime.DateTime));
 
         Assert.Equal(0x1A4, GetUnixMode(archive.GetEntry("SKILL.md")!));
         Assert.Equal(0x1A4, GetUnixMode(archive.GetEntry("references/guide.md")!));
