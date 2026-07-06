@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills - SkillServer Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 2L4 8v16l12 6 12-6V8L16 2z" fill="#512BD4"/><path d="M16 6l-8 4v12l8 4 8-4V10L16 6z" fill="#1a1a2e"/><path d="M14 14c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z" fill="#00D4AA"/><path d="M12 20l4-2 4 2-4 2-4-2z" fill="#00D4AA"/><path d="M10 18l2 2-2 2-2-2 2-2z" fill="#512BD4"/><path d="M22 18l-2 2 2 2 2-2-2-2z" fill="#512BD4"/></svg>
+      <div class="nav-brand-text">SkillServer<span>Gallery</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="/skills/" class="nav-link active">Skills</a>
+      <a href="/subagents/" class="nav-link">Sub-agents</a>
+      <a href="#" class="nav-link">Docs</a>
+    </div>
+  </div>
+</nav>
+
+<main class="main" id="app">
+  <div class="loading">Loading...</div>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">Made with <span class="heart">❤️</span> by Petabridge</div>
+    <div class="footer-links">
+      <a href="https://netclaw.dev">netclaw.dev</a>
+      <span>·</span>
+      <a href="https://petabridge.com">petabridge.com</a>
+      <span>·</span>
+      <a href="https://github.com/netclaw-dev">GitHub</a>
+    </div>
+    <div class="footer-version">SkillServer v0.5.0 · Self-hosted agent infrastructure</div>
+  </div>
+</footer>
+
+<script type="module">
+import { fetchSkills, fetchSkillVersions, fetchSkillMd } from '/js/api.js';
+import { getSkillName } from '/js/router.js';
+
+const app = document.getElementById('app');
+const skillName = getSkillName();
+
+if (skillName) {
+    await renderDetail(skillName);
+} else {
+    await renderListing();
+}
+
+async function renderListing() {
+    document.title = 'Skills - SkillServer Gallery';
+    try {
+        const skills = await fetchSkills();
+        app.innerHTML = `
+            <div class="breadcrumb">
+                <a href="/">Home</a> <span>›</span> Skills
+            </div>
+            <div class="page-header">
+                <div>
+                    <h1>All Skills</h1>
+                    <p>Browse reusable capabilities for your agents</p>
+                </div>
+                <div class="search-wrap-inline">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" class="search-input" id="search" placeholder="Search skills...">
+                </div>
+            </div>
+            <div class="skill-list" id="skill-list">
+                ${skills.length === 0 ? '<p>No skills found.</p>' : skills.map(renderSkillCard).join('')}
+            </div>
+        `;
+        document.getElementById('search').addEventListener('input', async (e) => {
+            const q = e.target.value.trim();
+            const filtered = await fetchSkills(q || undefined);
+            document.getElementById('skill-list').innerHTML =
+                filtered.length === 0 ? '<p>No skills found.</p>' : filtered.map(renderSkillCard).join('');
+        });
+    } catch (err) {
+        app.innerHTML = `<div class="error">Failed to load skills: ${err.message}</div>`;
+    }
+}
+
+async function renderDetail(name) {
+    document.title = `${name} - SkillServer Gallery`;
+    try {
+        const versions = await fetchSkillVersions(name);
+        const latest = versions.find(v => v.isLatest) || versions[0];
+        const skillMd = await fetchSkillMd(name, latest.version);
+        app.innerHTML = `
+            <div class="breadcrumb">
+                <a href="/">Home</a> <span>›</span>
+                <a href="/skills/">Skills</a> <span>›</span>
+                ${name}
+            </div>
+            <div class="detail-header">
+                <div class="detail-title">
+                    <h1>${name}</h1>
+                    <span class="detail-version">v${latest.version} ${latest.isLatest ? '<span class="latest">← latest</span>' : ''}</span>
+                </div>
+                ${latest.category ? `<div class="tags" style="margin-bottom:16px"><span class="tag">${latest.category}</span></div>` : ''}
+                <p class="detail-description">${latest.description || ''}</p>
+                <div class="detail-meta">
+                    <div class="meta-item"><span class="meta-label">Versions</span><span class="meta-value">${versions.length}</span></div>
+                    <div class="meta-item"><span class="meta-label">Size</span><span class="meta-value">${formatBytes(latest.sizeBytes)}</span></div>
+                    <div class="meta-item"><span class="meta-label">Published</span><span class="meta-value">${formatDate(latest.publishedAt)}</span></div>
+                </div>
+            </div>
+            <section class="section">
+                <div class="section-header">
+                    <h2>SKILL.md</h2>
+                </div>
+                <div class="code-block"><pre>${escapeHtml(skillMd)}</pre></div>
+            </section>
+            <section class="section">
+                <div class="section-header">
+                    <h2>Version History</h2>
+                </div>
+                <div class="version-list">
+                    ${versions.map(v => `
+                        <div class="version-row ${v.isLatest ? 'current' : ''}">
+                            <span class="version-tag ${v.isLatest ? 'latest' : ''}">v${v.version}</span>
+                            <span class="version-date">${formatDate(v.publishedAt)}</span>
+                            <span class="version-size">${formatBytes(v.sizeBytes)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </section>
+        `;
+    } catch (err) {
+        app.innerHTML = `<div class="error">Failed to load skill: ${err.message}</div>`;
+    }
+}
+
+function renderSkillCard(skill) {
+    return `
+        <a href="/skills/${encodeURIComponent(skill.name)}/" class="skill-card">
+            <div class="skill-info">
+                <div class="skill-name">${skill.name}</div>
+                <div class="skill-desc">${skill.description || ''}</div>
+            </div>
+            <div class="skill-meta">
+                <span class="skill-version">v${skill.latestVersion}</span>
+                ${skill.category ? `<div class="tags"><span class="tag">${skill.category}</span></div>` : ''}
+            </div>
+        </a>
+    `;
+}
+
+function formatBytes(bytes) {
+    if (!bytes) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+    if (diff < 2592000000) return Math.floor(diff / 86400000) + 'd ago';
+    return d.toLocaleDateString();
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+</script>
+
+</body>
+</html>
