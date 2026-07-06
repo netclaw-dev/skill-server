@@ -10,6 +10,7 @@ namespace SkillServer.Services;
 
 public sealed class NativeManifestGenerator
 {
+    private const string CurrentApiVersion = "v1";
     private const string SkillsPageRange = "all";
     private const string SubAgentsPageRange = "all";
 
@@ -31,11 +32,11 @@ public sealed class NativeManifestGenerator
     {
         var manifest = new NativeRootManifest
         {
-            ApiVersion = "v1",
+            ApiVersion = CurrentApiVersion,
             Versions = new Dictionary<string, NativeVersionLinks>
             {
                 {
-                    "v1", new NativeVersionLinks
+                    CurrentApiVersion, new NativeVersionLinks
                     {
                         Self = Link("/manifest.json"),
                         Skills = Link("/skills/v1/index.json"),

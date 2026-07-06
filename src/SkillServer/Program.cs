@@ -52,11 +52,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Serve static files for gallery UI
-app.UseStaticFiles();
-
-// Map API endpoints (must be before fallback)
+// Map API endpoints (must be before fallback and static files)
 app.MapSkillServerEndpoints();
+
+// Serve static files for gallery UI (after API routes to avoid unnecessary file system lookups)
+app.UseStaticFiles();
 
 // Serve gallery UI for non-API paths
 app.MapFallbackToFile("index.html");

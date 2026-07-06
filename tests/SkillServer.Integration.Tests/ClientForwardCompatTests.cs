@@ -137,4 +137,31 @@ public sealed class ClientForwardCompatTests
         Assert.Equal("oci-image", detail.Artifact.Type);
         Assert.Null(detail.RoutesToSubagent);
     }
+
+    [Fact]
+    public async Task ResolveVersionAsync_WithNoCompatibleVersion_ThrowsNotSupportedException()
+    {
+        const string json = """
+            {
+              "$schema": "https://netclaw.dev/manifest/v1",
+              "apiVersion": "v2",
+              "versions": {
+                "v2": {
+                  "self": { "href": "/manifest.json" },
+                  "skills": { "href": "/skills/v2/index.json" },
+                  "subagents": { "href": "/subagents/v2/index.json" },
+                  "skillSearch": { "href": "/api/v2/skills" },
+                  "subagentSearch": { "href": "/api/v2/subagents" }
+                }
+              }
+            }
+            """;
+
+        using var client = CreateClient(json);
+        var ct = TestContext.Current.CancellationToken;
+
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => client.ResolveVersionAsync(ct));
+        Assert.Contains("v2", ex.Message);
+        Assert.Contains("v1", ex.Message);
+    }
 }

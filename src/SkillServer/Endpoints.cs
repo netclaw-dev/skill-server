@@ -17,12 +17,17 @@ public static class Endpoints
     {
         app.MapDiscoveryEndpoints();
         app.MapManifestEndpoints();
+        app.MapV1Api();
+        app.MapHealthEndpoints();
+        return app;
+    }
+
+    private static void MapV1Api(this WebApplication app)
+    {
         app.MapSkillEndpoints();
         app.MapSubAgentEndpoints();
         app.MapBlobEndpoints();
         app.MapApiKeyEndpoints();
-        app.MapHealthEndpoints();
-        return app;
     }
 
     private static void MapDiscoveryEndpoints(this WebApplication app)
