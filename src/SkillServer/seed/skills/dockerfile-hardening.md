@@ -6,7 +6,7 @@ metadata:
   category: security
   subagent: security-auditor
   version: "1.0"
-  tags: [docker, container-security, ci, devops]
+  tags: "docker, container-security, ci, devops"
 ---
 
 # Dockerfile Hardening

@@ -6,7 +6,7 @@ metadata:
   category: code-quality
   subagent: code-reviewer
   version: "1.0"
-  tags: [.net, code-review, testing, best-practices]
+  tags: ".net, code-review, testing, best-practices"
 ---
 
 # Code Review Checklist
