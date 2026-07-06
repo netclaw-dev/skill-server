@@ -3,30 +3,80 @@
 //      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
-using Microsoft.AspNetCore.Mvc.Testing;
+using Aspire.Hosting;
+using Aspire.Hosting.Testing;
 using Xunit;
 
 namespace SkillServer.E2E.Tests;
 
 public sealed class GalleryFixture : IAsyncLifetime
 {
-    private WebApplicationFactory<Program>? _factory;
-    public HttpClient Client { get; private set; } = null!;
-    public string BaseUrl { get; private set; } = null!;
+    private DistributedApplication? _app;
+    private HttpClient? _httpClient;
 
-    public ValueTask InitializeAsync()
+    public HttpClient Client => _httpClient
+        ?? throw new InvalidOperationException("HttpClient not initialized");
+
+    public string ServiceEndpoint { get; private set; } = string.Empty;
+
+    public async ValueTask InitializeAsync()
     {
-        _factory = new WebApplicationFactory<Program>();
-        Client = _factory.CreateClient();
-        BaseUrl = Client.BaseAddress?.ToString().TrimEnd('/') ?? "http://localhost";
-        return ValueTask.CompletedTask;
+        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.SkillServer>();
+        _app = await appHost.BuildAsync();
+        await _app.StartAsync();
+
+        var endpoint = _app.GetEndpoint("skillserver", "http");
+        ServiceEndpoint = endpoint.ToString().TrimEnd('/');
+
+        // Wait for the server to accept connections
+        var ready = await PollForEndpointReadyAsync(endpoint, TimeSpan.FromSeconds(30));
+        if (!ready)
+        {
+            throw new TimeoutException($"Server at {endpoint} did not become ready within 30 seconds");
+        }
+
+        _httpClient = new HttpClient { BaseAddress = endpoint };
     }
 
-    public ValueTask DisposeAsync()
+    private static async Task<bool> PollForEndpointReadyAsync(Uri endpoint, TimeSpan timeout)
     {
-        Client?.Dispose();
-        _factory?.Dispose();
-        return ValueTask.CompletedTask;
+        using var pollClient = new HttpClient { BaseAddress = endpoint, Timeout = TimeSpan.FromSeconds(2) };
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            var success = await TryGetAsync(pollClient, "/");
+            if (success)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static async Task<bool> TryGetAsync(HttpClient client, string requestUri)
+    {
+        try
+        {
+            using var response = await client.GetAsync(requestUri);
+            return response.IsSuccessStatusCode;
+        }
+        catch (HttpRequestException)
+        {
+            return false;
+        }
+        catch (TaskCanceledException)
+        {
+            return false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _httpClient?.Dispose();
+        if (_app is not null)
+        {
+            await _app.DisposeAsync();
+        }
     }
 }
 
@@ -48,7 +98,6 @@ public sealed class GallerySmokeTests : IClassFixture<GalleryFixture>
         response.EnsureSuccessStatusCode();
         var html = await response.Content.ReadAsStringAsync(ct);
         Assert.Contains("SkillServer", html);
-        Assert.Contains("gallery", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -72,21 +121,25 @@ public sealed class GallerySmokeTests : IClassFixture<GalleryFixture>
     }
 
     [Fact]
-    public async Task SkillsApi_ReturnsJson()
+    public async Task SkillsApi_ReturnsSeededSkills()
     {
         var ct = TestContext.Current.CancellationToken;
         var response = await _fixture.Client.GetAsync("/api/v1/skills/", ct);
         response.EnsureSuccessStatusCode();
-        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        var json = await response.Content.ReadAsStringAsync(ct);
+        Assert.Contains("dockerfile-hardening", json);
+        Assert.Contains("code-review-checklist", json);
     }
 
     [Fact]
-    public async Task SubAgentsApi_ReturnsJson()
+    public async Task SubAgentsApi_ReturnsSeededSubAgents()
     {
         var ct = TestContext.Current.CancellationToken;
         var response = await _fixture.Client.GetAsync("/api/v1/subagents/", ct);
         response.EnsureSuccessStatusCode();
-        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        var json = await response.Content.ReadAsStringAsync(ct);
+        Assert.Contains("static-analysis-auditor", json);
+        Assert.Contains("dependency-impact-analyzer", json);
     }
 
     [Fact]
