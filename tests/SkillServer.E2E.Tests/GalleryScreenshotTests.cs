@@ -74,7 +74,7 @@ public sealed class GalleryScreenshotTests : IAsyncLifetime
         if (_app is not null) await _app.DisposeAsync();
     }
 
-    private async Task<(string path, List<string> errors, List<string> failedRequests)> ScreenshotPageAsync(
+    private async Task<(string path, List<string> errors, List<string> failedRequests, string bodyBackground)> ScreenshotPageAsync(
         string screenshotName, string url, ViewportSize? viewport = null)
     {
         var context = await _browser!.NewContextAsync(new BrowserNewContextOptions
@@ -94,21 +94,31 @@ public sealed class GalleryScreenshotTests : IAsyncLifetime
         {
             failedRequests.Add($"{req.Method} {req.Url} — {req.Failure}");
         };
+        page.Response += (_, response) =>
+        {
+            if (response.Status >= 400)
+            {
+                failedRequests.Add($"{response.Status} {response.Url}");
+            }
+        };
 
         await page.GotoAsync(url, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        var bodyBackground = await page.Locator("body")
+            .EvaluateAsync<string>("el => getComputedStyle(el).backgroundColor");
 
         var screenshotPath = Path.Combine(Path.GetTempPath(), $"{screenshotName}.png");
         await page.ScreenshotAsync(new PageScreenshotOptions { Path = screenshotPath, FullPage = true });
         await context.CloseAsync();
-        return (screenshotPath, consoleErrors, failedRequests);
+        return (screenshotPath, consoleErrors, failedRequests, bodyBackground);
     }
 
     [Fact]
     public async Task Screenshot_HomePage()
     {
-        var (path, errors, failed) = await ScreenshotPageAsync("gallery-home", $"{_baseUrl}/");
+        var (path, errors, failed, bodyBackground) = await ScreenshotPageAsync("gallery-home", $"{_baseUrl}/");
         Assert.True(File.Exists(path));
         Assert.True(new FileInfo(path).Length > 0);
+        Assert.Equal("rgb(26, 26, 46)", bodyBackground);
         foreach (var e in errors) Console.WriteLine($"CONSOLE ERROR: {e}");
         foreach (var f in failed) Console.WriteLine($"FAILED REQUEST: {f}");
         Assert.Empty(errors);
@@ -118,9 +128,10 @@ public sealed class GalleryScreenshotTests : IAsyncLifetime
     [Fact]
     public async Task Screenshot_SkillsListing()
     {
-        var (path, errors, failed) = await ScreenshotPageAsync("gallery-skills-listing", $"{_baseUrl}/skills/");
+        var (path, errors, failed, bodyBackground) = await ScreenshotPageAsync("gallery-skills-listing", $"{_baseUrl}/skills/");
         Assert.True(File.Exists(path));
         Assert.True(new FileInfo(path).Length > 0);
+        Assert.Equal("rgb(26, 26, 46)", bodyBackground);
         foreach (var e in errors) Console.WriteLine($"CONSOLE ERROR: {e}");
         foreach (var f in failed) Console.WriteLine($"FAILED REQUEST: {f}");
         Assert.Empty(errors);
@@ -130,10 +141,11 @@ public sealed class GalleryScreenshotTests : IAsyncLifetime
     [Fact]
     public async Task Screenshot_SkillDetail_DockerfileHardening()
     {
-        var (path, errors, failed) = await ScreenshotPageAsync("gallery-skill-dockerfile-hardening",
+        var (path, errors, failed, bodyBackground) = await ScreenshotPageAsync("gallery-skill-dockerfile-hardening",
             $"{_baseUrl}/skills/dockerfile-hardening/");
         Assert.True(File.Exists(path));
         Assert.True(new FileInfo(path).Length > 0);
+        Assert.Equal("rgb(26, 26, 46)", bodyBackground);
         foreach (var e in errors) Console.WriteLine($"CONSOLE ERROR: {e}");
         foreach (var f in failed) Console.WriteLine($"FAILED REQUEST: {f}");
         Assert.Empty(errors);
@@ -143,10 +155,11 @@ public sealed class GalleryScreenshotTests : IAsyncLifetime
     [Fact]
     public async Task Screenshot_SkillDetail_CodeReviewChecklist()
     {
-        var (path, errors, failed) = await ScreenshotPageAsync("gallery-skill-code-review-checklist",
+        var (path, errors, failed, bodyBackground) = await ScreenshotPageAsync("gallery-skill-code-review-checklist",
             $"{_baseUrl}/skills/code-review-checklist/");
         Assert.True(File.Exists(path));
         Assert.True(new FileInfo(path).Length > 0);
+        Assert.Equal("rgb(26, 26, 46)", bodyBackground);
         foreach (var e in errors) Console.WriteLine($"CONSOLE ERROR: {e}");
         foreach (var f in failed) Console.WriteLine($"FAILED REQUEST: {f}");
         Assert.Empty(errors);
@@ -156,9 +169,10 @@ public sealed class GalleryScreenshotTests : IAsyncLifetime
     [Fact]
     public async Task Screenshot_SubAgentsListing()
     {
-        var (path, errors, failed) = await ScreenshotPageAsync("gallery-subagents-listing", $"{_baseUrl}/subagents/");
+        var (path, errors, failed, bodyBackground) = await ScreenshotPageAsync("gallery-subagents-listing", $"{_baseUrl}/subagents/");
         Assert.True(File.Exists(path));
         Assert.True(new FileInfo(path).Length > 0);
+        Assert.Equal("rgb(26, 26, 46)", bodyBackground);
         foreach (var e in errors) Console.WriteLine($"CONSOLE ERROR: {e}");
         foreach (var f in failed) Console.WriteLine($"FAILED REQUEST: {f}");
         Assert.Empty(errors);
@@ -168,10 +182,11 @@ public sealed class GalleryScreenshotTests : IAsyncLifetime
     [Fact]
     public async Task Screenshot_SubAgentDetail_StaticAnalysisAuditor()
     {
-        var (path, errors, failed) = await ScreenshotPageAsync("gallery-subagent-static-analysis-auditor",
+        var (path, errors, failed, bodyBackground) = await ScreenshotPageAsync("gallery-subagent-static-analysis-auditor",
             $"{_baseUrl}/subagents/static-analysis-auditor/");
         Assert.True(File.Exists(path));
         Assert.True(new FileInfo(path).Length > 0);
+        Assert.Equal("rgb(26, 26, 46)", bodyBackground);
         foreach (var e in errors) Console.WriteLine($"CONSOLE ERROR: {e}");
         foreach (var f in failed) Console.WriteLine($"FAILED REQUEST: {f}");
         Assert.Empty(errors);
@@ -181,10 +196,11 @@ public sealed class GalleryScreenshotTests : IAsyncLifetime
     [Fact]
     public async Task Screenshot_SubAgentDetail_DependencyImpactAnalyzer()
     {
-        var (path, errors, failed) = await ScreenshotPageAsync("gallery-subagent-dependency-impact-analyzer",
+        var (path, errors, failed, bodyBackground) = await ScreenshotPageAsync("gallery-subagent-dependency-impact-analyzer",
             $"{_baseUrl}/subagents/dependency-impact-analyzer/");
         Assert.True(File.Exists(path));
         Assert.True(new FileInfo(path).Length > 0);
+        Assert.Equal("rgb(26, 26, 46)", bodyBackground);
         foreach (var e in errors) Console.WriteLine($"CONSOLE ERROR: {e}");
         foreach (var f in failed) Console.WriteLine($"FAILED REQUEST: {f}");
         Assert.Empty(errors);
