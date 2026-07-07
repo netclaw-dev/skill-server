@@ -60,19 +60,21 @@ if (skillName) {
 async function renderListing() {
     document.title = 'Skills - SkillServer Gallery';
     try {
-        const skills = await fetchSkills();
+        const params = new URLSearchParams(window.location.search);
+        const initialQuery = params.get('q');
+        const skills = await fetchSkills(initialQuery || undefined);
         app.innerHTML = `
             <div class="breadcrumb">
                 <a href="/">Home</a> <span>›</span> Skills
             </div>
             <div class="page-header">
                 <div>
-                    <h1>All Skills</h1>
-                    <p>Browse reusable capabilities for your agents</p>
+                    <h1>${initialQuery ? 'Search Results' : 'All Skills'}</h1>
+                    <p>${initialQuery ? `"${initialQuery}" — ${skills.length} result${skills.length !== 1 ? 's' : ''}` : 'Browse reusable capabilities for your agents'}</p>
                 </div>
                 <div class="search-wrap-inline">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <input type="text" class="search-input" id="search" placeholder="Search skills...">
+                    <input type="text" class="search-input" id="search" placeholder="Search skills..." value="${initialQuery || ''}">
                 </div>
             </div>
             <div class="skill-list" id="skill-list">
@@ -84,6 +86,10 @@ async function renderListing() {
             const filtered = await fetchSkills(q || undefined);
             document.getElementById('skill-list').innerHTML =
                 filtered.length === 0 ? '<p>No skills found.</p>' : filtered.map(renderSkillCard).join('');
+            document.querySelector('.page-header h1').textContent = q ? 'Search Results' : 'All Skills';
+            document.querySelector('.page-header p').textContent = q
+                ? `"${q}" — ${filtered.length} result${filtered.length !== 1 ? 's' : ''}`
+                : 'Browse reusable capabilities for your agents';
         });
     } catch (err) {
         app.innerHTML = `<div class="error">Failed to load skills: ${err.message}</div>`;
