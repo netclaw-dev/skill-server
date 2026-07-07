@@ -22,17 +22,33 @@ function Get-ReleaseNotes {
         throw "Unable to parse release notes from $MarkdownFile."
     }
 
-    $leadingNoisePattern = '^[\p{Z}\p{Cf}\p{Cc}]+'
-    $headerPrefixPattern = '^([\p{Z}\p{Cf}\p{Cc}]*)####\s*'
+    function Get-LeadingNoiseFreeText {
+        param(
+            [Parameter()]
+            [AllowEmptyString()]
+            [string]$Line
+        )
+
+        while (-not [string]::IsNullOrEmpty($Line)) {
+            $firstCharacter = $Line[0]
+            if ([char]::IsWhiteSpace($firstCharacter) -or [char]::IsControl($firstCharacter) -or [System.Char]::GetUnicodeCategory($firstCharacter) -eq [System.Globalization.UnicodeCategory]::Format) {
+                $Line = $Line.Substring(1)
+                continue
+            }
+
+            break
+        }
+
+        return $Line
+    }
     
     # Find the first valid release header line.
     $headerLine = $null
     $headerLineIndex = -1
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        $candidate = [regex]::Replace($lines[$i], $leadingNoisePattern, '')
+        $candidate = Get-LeadingNoiseFreeText -Line $lines[$i]
 
-        $headerMatch = [regex]::Match($candidate, $headerPrefixPattern)
-        if ($headerMatch.Success) {
+        if ($candidate.StartsWith('####')) {
             $headerLine = $candidate
             $headerLineIndex = $i
             break
@@ -43,13 +59,8 @@ function Get-ReleaseNotes {
         throw "Unable to parse release notes from $MarkdownFile."
     }
 
-    # Safety check after filtering out hidden leading characters.
-    if ($null -eq $headerLine -or -not $headerLine.StartsWith('####')) {
-        throw "Unable to parse release notes from $MarkdownFile."
-    }
-
     # Extract header text, then version/date.
-    $headerLine = $headerLine -replace "^([\p{Z}\p{Cf}\p{Cc}]*)####\s*", ""
+    $headerLine = $headerLine -replace "^####\s*", ""
     $headerLine = $headerLine -replace "\s*####\s*$", ""
 
     $headerParts = $headerLine -split " ", 2
@@ -70,9 +81,9 @@ function Get-ReleaseNotes {
     # Grab release notes from this first section only.
     $releaseNotesEndLine = $lines.Count
     for ($i = $headerLineIndex + 1; $i -lt $lines.Count; $i++) {
-        $candidate = [regex]::Replace($lines[$i], $leadingNoisePattern, '')
+        $candidate = Get-LeadingNoiseFreeText -Line $lines[$i]
 
-        if ([regex]::IsMatch($candidate, $headerPrefixPattern)) {
+        if ($candidate.StartsWith('####')) {
             $releaseNotesEndLine = $i
             break
         }
