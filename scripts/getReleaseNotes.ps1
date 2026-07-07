@@ -22,28 +22,26 @@ function Get-ReleaseNotes {
         throw "Unable to parse release notes from $MarkdownFile."
     }
 
-    # Find the first non-empty line to find the latest release header.
+    # Find the first valid release header line.
     $headerLine = $null
-    $headerLineIndex = 0
-    while ($headerLineIndex -lt $lines.Count) {
-        $candidate = $lines[$headerLineIndex].Trim()
+    $headerLineIndex = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $candidate = $lines[$i].Trim()
+        $candidate = [regex]::Replace($candidate, '^[\uFEFF\u200B\u200C\u200D\u2060]+', '')
 
-        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+        if ($candidate.StartsWith('####')) {
             $headerLine = $candidate
+            $headerLineIndex = $i
             break
         }
-
-        $headerLineIndex++
     }
 
     if ($null -eq $headerLine) {
         throw "Unable to parse release notes from $MarkdownFile."
     }
 
-    # Strip BOMs or other non-content leading chars.
-    $headerLine = $headerLine.TrimStart([char]0xFEFF, [char]0x200B)
-
-    if (-not $headerLine.StartsWith("####")) {
+    # Safety check after filtering out hidden leading characters.
+    if ($null -eq $headerLine -or -not $headerLine.StartsWith('####')) {
         throw "Unable to parse release notes from $MarkdownFile."
     }
 
