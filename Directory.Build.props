@@ -20,22 +20,18 @@
   </PropertyGroup>
   <!-- Version Management -->
   <PropertyGroup>
-    <VersionPrefix>0.4.0</VersionPrefix>
+    <VersionPrefix>0.4.0-beta.4</VersionPrefix>
     <VersionSuffix>beta.3</VersionSuffix>
-    <PackageReleaseNotes>**Features**
-- Dynamic gallery UI with client-side rendering — SPA-style folder routes via rewrite middleware, shared JS modules, and dynamic listing/detail views for skills and sub-agents (#117)
-- API versioning and native manifest HATEOAS discovery — all API endpoints versioned under /api/v1/ prefix; native manifest includes version negotiation and search links (#116)
-- Tolerant frontmatter metadata parsing — SKILL.md frontmatter now accepts rich YAML values (lists, nested mappings) without rejecting the skill (#118)
-
-**Security**
-- Security hardening and trust model documentation — auth boundary tests, path-traversal rejection, digest-mismatch verification, and new security.md spec (#111)
+    <PackageReleaseNotes>**New Features**
+- Add batch sub-agent publishing with a new `publish-subagents` CLI command to validate and upload all sub-agent definitions under a folder, with support for version overrides, dry-run, force publish, and verbose output (#121)
+- Add `lint subagents` CLI mode to validate every sub-agent markdown file in a directory and report duplicate sub-agent names
 
 **Improvements**
-- Aspire dashboard with seed data support — optional SeedDataService uploads sample skills/sub-agents on startup for development (#118)
+- Improve skill search relevance by prioritizing exact and prefix skill-name matches ahead of description-only matches (#121)
+- Improve gallery UX by making cards interactive, wiring version history rows to version URLs, and adding a keyboard hint to the search input
 
 **Internal**
-- E2E test infrastructure with Playwright and Aspire.Hosting.Testing (#117)
-- YamlDotNet updated from 17.1.0 to 18.1.0 (#113)</PackageReleaseNotes>
+- Extend sub-agent validation and publishing flow to accept `version` frontmatter (including `metadata.version`) and add validation tests for batch publish and route parsing logic (#121)</PackageReleaseNotes>
   </PropertyGroup>
   <!-- Default: non-packable unless explicitly set -->
   <PropertyGroup>

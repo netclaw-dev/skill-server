@@ -1,3 +1,16 @@
+#### 0.4.0-beta.4 July 7th 2026 ####
+
+**New Features**
+- Add batch sub-agent publishing with a new `publish-subagents` CLI command to validate and upload all sub-agent definitions under a folder, with support for version overrides, dry-run, force publish, and verbose output (#121)
+- Add `lint subagents` CLI mode to validate every sub-agent markdown file in a directory and report duplicate sub-agent names
+
+**Improvements**
+- Improve skill search relevance by prioritizing exact and prefix skill-name matches ahead of description-only matches (#121)
+- Improve gallery UX by making cards interactive, wiring version history rows to version URLs, and adding a keyboard hint to the search input
+
+**Internal**
+- Extend sub-agent validation and publishing flow to accept `version` frontmatter (including `metadata.version`) and add validation tests for batch publish and route parsing logic (#121)
+
 #### 0.4.0-beta.2 July 3rd 2026 ####
 
 **New Features**

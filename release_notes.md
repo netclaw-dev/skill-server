@@ -1,3 +1,21 @@
+## 0.4.0-beta.4 (2026-07-07)
+
+### New Features
+
+- **Batch sub-agent publishing** — Added `publish-subagents` to validate and publish all sub-agent markdown files in a folder with optional `--version`, `--force`, and `--dry-run` options (`#121`)
+- **Directory sub-agent linting** — Added `lint subagents` to validate every file and report duplicate sub-agent names before publishing
+
+### Improvements
+
+- **Skill search ranking** — Increased relevance for exact or prefix name matches over body and description matches
+- **Gallery interaction upgrades** — Made skill cards clickable, added version-link navigation to version history rows, and surfaced an Enter-key hint in the search box
+
+### Internal
+
+- **Sub-agent parsing and testing** — Extended sub-agent metadata parsing for `version`/`metadata.version` and added unit coverage for batch publish and route helpers
+
+---
+
 ## 0.4.0-beta.3 (2026-07-07)
 
 ### Features
