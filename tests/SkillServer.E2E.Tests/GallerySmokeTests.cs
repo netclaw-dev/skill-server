@@ -107,7 +107,8 @@ public sealed class GallerySmokeTests : IClassFixture<GalleryFixture>
         var response = await _fixture.Client.GetAsync("/skills/", ct);
         response.EnsureSuccessStatusCode();
         var html = await response.Content.ReadAsStringAsync(ct);
-        Assert.Contains("Skills", html);
+        Assert.Contains("<title>Skills - SkillServer Gallery</title>", html);
+        Assert.Contains("fetchSkillVersions", html);
     }
 
     [Fact]
@@ -117,7 +118,30 @@ public sealed class GallerySmokeTests : IClassFixture<GalleryFixture>
         var response = await _fixture.Client.GetAsync("/subagents/", ct);
         response.EnsureSuccessStatusCode();
         var html = await response.Content.ReadAsStringAsync(ct);
-        Assert.Contains("Sub-agents", html);
+        Assert.Contains("<title>Sub-agents - SkillServer Gallery</title>", html);
+        Assert.Contains("fetchSubAgentVersions", html);
+    }
+
+    [Fact]
+    public async Task SkillDetailRoute_ServesSkillsShell()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var response = await _fixture.Client.GetAsync("/skills/dockerfile-hardening/", ct);
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync(ct);
+        Assert.Contains("<title>Skills - SkillServer Gallery</title>", html);
+        Assert.Contains("fetchSkillVersions", html);
+    }
+
+    [Fact]
+    public async Task SubAgentDetailRoute_ServesSubAgentsShell()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var response = await _fixture.Client.GetAsync("/subagents/static-analysis-auditor/", ct);
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync(ct);
+        Assert.Contains("<title>Sub-agents - SkillServer Gallery</title>", html);
+        Assert.Contains("fetchSubAgentVersions", html);
     }
 
     [Fact]

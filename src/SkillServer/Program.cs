@@ -60,23 +60,12 @@ if (app.Environment.IsDevelopment())
 // Map API endpoints (must be before fallback and static files)
 app.MapSkillServerEndpoints();
 
-// Rewrite nested gallery routes to parent index.html for SPA-style routing
-// e.g., /skills/kubernetes-deploy/ → /skills/index.html
-app.Use(async (context, next) =>
-{
-    var path = context.Request.Path.Value?.TrimEnd('/') ?? "";
-    if (path.StartsWith("/skills/", StringComparison.OrdinalIgnoreCase) && path.Count('/') > 2)
-        context.Request.Path = "/skills/index.html";
-    if (path.StartsWith("/subagents/", StringComparison.OrdinalIgnoreCase) && path.Count('/') > 2)
-        context.Request.Path = "/subagents/index.html";
-    await next();
-});
-
-// Serve static files for gallery UI (after API routes to avoid unnecessary file system lookups)
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-// Serve gallery UI for non-API paths
+// Serve CSR gallery shells for deep links.
+app.MapFallbackToFile("/skills/{*path:nonfile}", "skills/index.html");
+app.MapFallbackToFile("/subagents/{*path:nonfile}", "subagents/index.html");
 app.MapFallbackToFile("index.html");
 
 app.Run();

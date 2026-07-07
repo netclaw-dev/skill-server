@@ -4,10 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 var builder = DistributedApplication.CreateBuilder(args);
+var skillServerProjectDirectory = Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", "SkillServer"));
 
 builder.AddProject<Projects.SkillServer>("skillserver")
     .WithHttpEndpoint(port: 0, name: "http")
     .WithEnvironment("SkillServer__SeedData", builder.Configuration["SkillServer:SeedData"] ?? "true")
-    .WithEnvironment("SkillServer__DataPath", Path.Combine(builder.AppHostDirectory, "..", "src", "SkillServer", "data"));
+    .WithEnvironment("SkillServer__DataPath", Path.Combine(skillServerProjectDirectory, "data"));
 
 builder.Build().Run();
