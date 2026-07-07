@@ -5,10 +5,7 @@ function Get-ReleaseNotes {
     )
 
     # Read markdown file content
-    $content = Get-Content -Path $MarkdownFile -Raw
-
-    # Split content based on headers
-    $sections = $content -split "####"
+    $lines = Get-Content -Path $MarkdownFile
 
     $versionPattern = '^(?<core>(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))(?:-(?<suffix>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+(?<build>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$'
 
@@ -21,32 +18,68 @@ function Get-ReleaseNotes {
         ReleaseNotes = $null
     }
 
-    # Check if we have at least 3 sections (1. Before the header, 2. Header, 3. Release notes)
-    if ($sections.Count -ge 3) {
-        $header = $sections[1].Trim()
-        $releaseNotes = $sections[2].Trim()
+    if (-not $lines -or $lines.Count -eq 0) {
+        throw "Unable to parse release notes from $MarkdownFile."
+    }
 
-        # Extract version and date from the header
-        $headerParts = $header -split " ", 2
-        if ($headerParts.Count -ge 1) {
-            $versionText = $headerParts[0]
+    # Find the first non-empty line to find the latest release header.
+    $headerLine = $null
+    $headerLineIndex = 0
+    while ($headerLineIndex -lt $lines.Count) {
+        $candidate = $lines[$headerLineIndex].Trim()
 
-            if ($versionText -notmatch $versionPattern) {
-                throw "Invalid release version '$versionText' in $MarkdownFile."
-            }
-
-            $outputObject.Version = $versionText
-            $outputObject.VersionCore = $matches.core
-            $outputObject.VersionSuffix = if ($matches.suffix) { $matches.suffix } else { '' }
-
-            if ($headerParts.Count -ge 2) {
-                $outputObject.Date = $headerParts[1]
-            }
+        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+            $headerLine = $candidate
+            break
         }
 
-        $outputObject.ReleaseNotes = $releaseNotes
-    } else {
+        $headerLineIndex++
+    }
+
+    if ($null -eq $headerLine) {
         throw "Unable to parse release notes from $MarkdownFile."
+    }
+
+    # Strip BOMs or other non-content leading chars.
+    $headerLine = $headerLine.TrimStart([char]0xFEFF, [char]0x200B)
+
+    if (-not $headerLine.StartsWith("####")) {
+        throw "Unable to parse release notes from $MarkdownFile."
+    }
+
+    # Extract header text, then version/date.
+    $headerLine = $headerLine.Substring(4).Trim()
+    $headerLine = $headerLine -replace "\s*####\s*$", ""
+
+    $headerParts = $headerLine -split " ", 2
+    $versionText = $headerParts[0]
+
+    if ($versionText -notmatch $versionPattern) {
+        throw "Invalid release version '$versionText' in $MarkdownFile."
+    }
+
+    $outputObject.Version = $versionText
+    $outputObject.VersionCore = $matches.core
+    $outputObject.VersionSuffix = if ($matches.suffix) { $matches.suffix } else { '' }
+
+    if ($headerParts.Count -ge 2) {
+        $outputObject.Date = $headerParts[1]
+    }
+
+    # Grab release notes from this first section only.
+    $releaseNotesEndLine = $lines.Count
+    for ($i = $headerLineIndex + 1; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].Trim().StartsWith("####")) {
+            $releaseNotesEndLine = $i
+            break
+        }
+    }
+
+    if ($releaseNotesEndLine -gt $headerLineIndex + 1) {
+        $outputObject.ReleaseNotes = ($lines[($headerLineIndex + 1)..($releaseNotesEndLine - 1)] -join "`r`n").Trim()
+    }
+    else {
+        $outputObject.ReleaseNotes = ""
     }
 
     # Return the output object
