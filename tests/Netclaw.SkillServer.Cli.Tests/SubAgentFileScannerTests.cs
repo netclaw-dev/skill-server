@@ -32,11 +32,65 @@ public sealed class SubAgentFileScannerTests
         Assert.Empty(result.Warnings);
         Assert.NotNull(result.SubAgent);
         Assert.Equal("support-agent", result.SubAgent.Name);
+        Assert.Null(result.SubAgent.Version);
         Assert.Equal("Main", result.SubAgent.ModelRole);
         Assert.Equal(120, result.SubAgent.TimeoutSeconds);
         Assert.Equal(30, result.SubAgent.PrefillTimeoutSeconds);
         Assert.Equal("internal", result.SubAgent.Visibility);
         Assert.True(result.SubAgent.EmitStructuredFindings);
+    }
+
+    [Fact]
+    public void ValidateContent_VersionFrontmatter_ReturnsScannedVersion()
+    {
+        var result = SubAgentFileScanner.ValidateContent("agent.md", "/tmp/agent.md", """
+            ---
+            name: support-agent
+            version: 1.2.3
+            description: Diagnose support issues.
+            ---
+
+            Prompt body.
+            """);
+
+        Assert.Empty(result.Issues);
+        Assert.NotNull(result.SubAgent);
+        Assert.Equal("1.2.3", result.SubAgent.Version);
+    }
+
+    [Fact]
+    public void ValidateContent_MetadataVersionFrontmatter_ReturnsScannedVersion()
+    {
+        var result = SubAgentFileScanner.ValidateContent("agent.md", "/tmp/agent.md", """
+            ---
+            name: support-agent
+            metadata.version: 1.2.3
+            description: Diagnose support issues.
+            ---
+
+            Prompt body.
+            """);
+
+        Assert.Empty(result.Issues);
+        Assert.NotNull(result.SubAgent);
+        Assert.Equal("1.2.3", result.SubAgent.Version);
+    }
+
+    [Fact]
+    public void ValidateContent_InvalidVersionFrontmatter_ReportsIssue()
+    {
+        var result = SubAgentFileScanner.ValidateContent("agent.md", "/tmp/agent.md", """
+            ---
+            name: support-agent
+            version: bad/version
+            description: Diagnose support issues.
+            ---
+
+            Prompt body.
+            """);
+
+        Assert.Null(result.SubAgent);
+        Assert.Contains(result.Issues, issue => issue.Contains("Invalid 'version' format", StringComparison.Ordinal));
     }
 
     [Fact]

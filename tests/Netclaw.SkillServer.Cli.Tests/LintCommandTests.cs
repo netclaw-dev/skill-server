@@ -392,5 +392,43 @@ public sealed class LintCommandTests : IDisposable
         Assert.Equal(0, result); // warnings don't fail
     }
 
+    [Fact]
+    public async Task ExecuteAsync_SubAgentsDirectoryWithDuplicateNames_Returns1()
+    {
+        CreateSubAgentFile("one.md", "support-agent");
+        CreateSubAgentFile("two.md", "support-agent");
+
+        var args = new ParsedArgs { Positional = ["subagents", _tempDir] };
+
+        var result = await LintCommand.ExecuteAsync(args);
+
+        Assert.Equal(1, result);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ValidSubAgentsDirectory_Returns0()
+    {
+        CreateSubAgentFile("support.md", "support-agent");
+        CreateSubAgentFile("review.md", "review-agent");
+
+        var args = new ParsedArgs { Positional = ["subagents", _tempDir] };
+
+        var result = await LintCommand.ExecuteAsync(args);
+
+        Assert.Equal(0, result);
+    }
+
     #endregion
+
+    private void CreateSubAgentFile(string fileName, string name)
+    {
+        File.WriteAllText(Path.Combine(_tempDir, fileName), $"""
+            ---
+            name: {name}
+            description: Diagnose support issues.
+            ---
+
+            You are a support diagnostician.
+            """);
+    }
 }

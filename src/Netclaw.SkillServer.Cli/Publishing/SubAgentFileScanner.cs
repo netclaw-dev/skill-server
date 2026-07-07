@@ -11,6 +11,7 @@ namespace Netclaw.SkillServer.Cli.Publishing;
 internal sealed record ScannedSubAgent(
     string FilePath,
     string Name,
+    string? Version,
     string Description,
     string Body,
     string ModelRole,
@@ -29,6 +30,8 @@ internal static partial class SubAgentFileScanner
     private static readonly HashSet<string> KnownFields = new(StringComparer.OrdinalIgnoreCase)
     {
         "name",
+        "version",
+        "metadata.version",
         "description",
         "tools",
         "modelRole",
@@ -100,6 +103,10 @@ internal static partial class SubAgentFileScanner
         var timeoutSeconds = ParseTimeout(fields.GetValueOrDefault("timeoutSeconds"), "timeoutSeconds", 60, 5, 600, issues, displayName);
         var prefillTimeoutSeconds = ParseOptionalTimeout(fields.GetValueOrDefault("prefillTimeoutSeconds"), "prefillTimeoutSeconds", 5, 3600, issues, displayName);
         var emitStructuredFindings = ParseBool(fields.GetValueOrDefault("emitStructuredFindings"), "emitStructuredFindings", false, issues, displayName);
+        var version = NormalizeVersion(
+            fields.GetValueOrDefault("version") ?? fields.GetValueOrDefault("metadata.version"),
+            issues,
+            displayName);
 
         if (issues.Count > 0)
             return new SubAgentLintResult(issues, warnings, null);
@@ -110,6 +117,7 @@ internal static partial class SubAgentFileScanner
             new ScannedSubAgent(
                 Path.GetFullPath(filePath),
                 name!,
+                version,
                 description!,
                 body,
                 modelRole,
@@ -117,6 +125,20 @@ internal static partial class SubAgentFileScanner
                 prefillTimeoutSeconds,
                 visibility,
                 emitStructuredFindings));
+    }
+
+    public static IReadOnlyList<SubAgentLintResult> ValidateDirectory(string directoryPath)
+    {
+        var dir = Path.GetFullPath(directoryPath);
+        if (!Directory.Exists(dir))
+        {
+            return [new SubAgentLintResult([$"{Path.GetFileName(dir)}: Directory does not exist"], [], null)];
+        }
+
+        return Directory.EnumerateFiles(dir, "*.md", SearchOption.AllDirectories)
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .Select(ValidateFile)
+            .ToList();
     }
 
     private static Dictionary<string, string> ParseFrontmatter(string yaml, List<string> warnings, string displayName)
@@ -241,6 +263,18 @@ internal static partial class SubAgentFileScanner
         return !string.IsNullOrWhiteSpace(version) &&
                version.Length <= 64 &&
                version.All(c => char.IsLetterOrDigit(c) || c == '.' || c == '-' || c == '+');
+    }
+
+    private static string? NormalizeVersion(string? value, List<string> issues, string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        if (IsValidVersion(value))
+            return value;
+
+        issues.Add($"{displayName}: Invalid 'version' format '{value}' - must be 1-64 alphanumeric characters, dots, hyphens, or plus signs");
+        return null;
     }
 
     internal static bool IsValidName(string? name)

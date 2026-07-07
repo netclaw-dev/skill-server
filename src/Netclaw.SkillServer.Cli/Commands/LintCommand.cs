@@ -30,6 +30,12 @@ internal static class LintCommand
             return ExecuteSubAgentLint(args);
         }
 
+        if (args.Positional.Count > 0 &&
+            args.Positional[0].Equals("subagents", StringComparison.OrdinalIgnoreCase))
+        {
+            return ExecuteSubAgentsLint(args);
+        }
+
         if (args.Help || args.Positional.Count == 0)
         {
             PrintHelp();
@@ -142,6 +148,47 @@ internal static class LintCommand
         }
 
         ConsoleOutput.WriteError($"{result.Issues.Count} error(s), {result.Warnings.Count} warning(s) — lint failed");
+        return 1;
+    }
+
+    private static int ExecuteSubAgentsLint(ParsedArgs args)
+    {
+        if (args.Help || args.Positional.Count < 2)
+        {
+            PrintSubAgentsHelp();
+            return args.Help ? 0 : 1;
+        }
+
+        var path = args.Positional[1];
+        var results = SubAgentFileScanner.ValidateDirectory(path);
+        var issues = results.SelectMany(r => r.Issues).ToList();
+        var warnings = results.SelectMany(r => r.Warnings).ToList();
+        var validSubAgents = results.Select(r => r.SubAgent).OfType<ScannedSubAgent>().ToList();
+
+        foreach (var group in validSubAgents.GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1))
+        {
+            issues.Add($"Duplicate sub-agent name '{group.Key}' found in input set: {string.Join(", ", group.Select(s => s.FilePath))}");
+        }
+
+        ConsoleOutput.WriteInfo($"Linting sub-agents in '{path}'...");
+        ConsoleOutput.WriteInfo($"Found {results.Count} markdown file(s).");
+        Console.WriteLine();
+
+        foreach (var issue in issues)
+            ConsoleOutput.WriteError($"✗ {issue}");
+
+        foreach (var warning in warnings)
+            ConsoleOutput.WriteWarning($"⚠ {warning}");
+
+        Console.WriteLine();
+
+        if (issues.Count == 0)
+        {
+            ConsoleOutput.WriteSuccess($"All sub-agents valid ({validSubAgents.Count} passed, {warnings.Count} warning(s))");
+            return 0;
+        }
+
+        ConsoleOutput.WriteError($"{issues.Count} error(s), {warnings.Count} warning(s) - lint failed");
         return 1;
     }
 
@@ -261,5 +308,17 @@ internal static class LintCommand
         Console.WriteLine("  - Name format matches SkillServer resource names");
         Console.WriteLine("  - Prompt body is not empty");
         Console.WriteLine("  - modelRole, visibility, timeoutSeconds, and prefillTimeoutSeconds values are valid");
+    }
+
+    private static void PrintSubAgentsHelp()
+    {
+        Console.WriteLine("Usage: skillserver lint subagents <path>");
+        Console.WriteLine();
+        Console.WriteLine("Validate all NetClaw-compatible sub-agent markdown files under a directory.");
+        Console.WriteLine();
+        Console.WriteLine("Arguments:");
+        Console.WriteLine("  <path>    Directory containing .md sub-agent definitions");
+        Console.WriteLine();
+        Console.WriteLine("Validates each file and reports duplicate sub-agent names in the input set.");
     }
 }
