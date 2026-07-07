@@ -10,11 +10,15 @@ function Get-ReleaseNotes {
     # Split content based on headers
     $sections = $content -split "####"
 
+    $versionPattern = '^(?<core>(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))(?:-(?<suffix>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+(?<build>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$'
+
     # Output object to store result
     $outputObject = [PSCustomObject]@{
-        Version       = $null
-        Date          = $null
-        ReleaseNotes  = $null
+        Version      = $null
+        VersionCore  = $null
+        VersionSuffix = $null
+        Date         = $null
+        ReleaseNotes = $null
     }
 
     # Check if we have at least 3 sections (1. Before the header, 2. Header, 3. Release notes)
@@ -24,12 +28,25 @@ function Get-ReleaseNotes {
 
         # Extract version and date from the header
         $headerParts = $header -split " ", 2
-        if ($headerParts.Count -eq 2) {
-            $outputObject.Version = $headerParts[0]
-            $outputObject.Date = $headerParts[1]
+        if ($headerParts.Count -ge 1) {
+            $versionText = $headerParts[0]
+
+            if ($versionText -notmatch $versionPattern) {
+                throw "Invalid release version '$versionText' in $MarkdownFile."
+            }
+
+            $outputObject.Version = $versionText
+            $outputObject.VersionCore = $matches.core
+            $outputObject.VersionSuffix = if ($matches.suffix) { $matches.suffix } else { '' }
+
+            if ($headerParts.Count -ge 2) {
+                $outputObject.Date = $headerParts[1]
+            }
         }
 
         $outputObject.ReleaseNotes = $releaseNotes
+    } else {
+        throw "Unable to parse release notes from $MarkdownFile."
     }
 
     # Return the output object
