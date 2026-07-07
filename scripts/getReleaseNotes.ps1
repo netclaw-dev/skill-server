@@ -4,8 +4,12 @@ function Get-ReleaseNotes {
         [string]$MarkdownFile
     )
 
-    # Read markdown file content
-    $lines = Get-Content -Path $MarkdownFile
+    # Read markdown file content explicitly as UTF-8 to avoid platform-dependent defaults.
+    # Fall back to UTF-16 only if the UTF-8 read returns no lines.
+    $lines = [System.IO.File]::ReadAllLines($MarkdownFile, [System.Text.Encoding]::UTF8)
+    if (-not $lines -or $lines.Count -eq 0) {
+        $lines = [System.IO.File]::ReadAllLines($MarkdownFile, [System.Text.Encoding]::Unicode)
+    }
 
     $versionPattern = '^(?<core>(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))(?:-(?<suffix>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+(?<build>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$'
 
@@ -41,38 +45,77 @@ function Get-ReleaseNotes {
 
         return $Line
     }
+
+    function Get-ReleaseHeaderCandidate {
+        param(
+            [Parameter()]
+            [AllowEmptyString()]
+            [string]$Line
+        )
+
+        $candidate = Get-LeadingNoiseFreeText -Line $Line
+        $headerIndex = $candidate.IndexOf('####')
+        if ($headerIndex -ge 0) {
+            return $candidate.Substring($headerIndex)
+        }
+
+        return $null
+    }
+
+    function Get-ReleaseHeaderData {
+        param(
+            [Parameter()]
+            [AllowEmptyString()]
+            [string]$Line
+        )
+
+        $candidate = Get-ReleaseHeaderCandidate -Line $Line
+        if (-not $candidate) {
+            return $null
+        }
+
+        $normalizedHeaderLine = $candidate -replace "^####\s*", ""
+        $normalizedHeaderLine = $normalizedHeaderLine -replace "\s*####\s*$", ""
+
+        $headerParts = $normalizedHeaderLine -split " ", 2
+        $versionText = $headerParts[0]
+
+        $versionMatch = [regex]::Match($versionText, $versionPattern)
+        if (-not $versionMatch.Success) {
+            return $null
+        }
+
+        return [PSCustomObject]@{
+            HeaderParts = $headerParts
+            VersionText = $versionText
+            VersionCore = $versionMatch.Groups['core'].Value
+            VersionSuffix = $versionMatch.Groups['suffix'].Value
+        }
+    }
     
     # Find the first valid release header line.
-    $headerLine = $null
+    $headerData = $null
     $headerLineIndex = -1
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        $candidate = Get-LeadingNoiseFreeText -Line $lines[$i]
-
-        if ($candidate.StartsWith('####')) {
-            $headerLine = $candidate
+        $candidate = Get-ReleaseHeaderData -Line $lines[$i]
+        if ($candidate) {
+            $headerData = $candidate
             $headerLineIndex = $i
             break
         }
     }
 
-    if ($null -eq $headerLine) {
+    if ($null -eq $headerData) {
         throw "Unable to parse release notes from $MarkdownFile."
     }
 
     # Extract header text, then version/date.
-    $headerLine = $headerLine -replace "^####\s*", ""
-    $headerLine = $headerLine -replace "\s*####\s*$", ""
-
-    $headerParts = $headerLine -split " ", 2
-    $versionText = $headerParts[0]
-
-    if ($versionText -notmatch $versionPattern) {
-        throw "Invalid release version '$versionText' in $MarkdownFile."
-    }
+    $headerParts = $headerData.HeaderParts
+    $versionText = $headerData.VersionText
 
     $outputObject.Version = $versionText
-    $outputObject.VersionCore = $matches.core
-    $outputObject.VersionSuffix = if ($matches.suffix) { $matches.suffix } else { '' }
+    $outputObject.VersionCore = $headerData.VersionCore
+    $outputObject.VersionSuffix = if ($headerData.VersionSuffix) { $headerData.VersionSuffix } else { '' }
 
     if ($headerParts.Count -ge 2) {
         $outputObject.Date = $headerParts[1]
@@ -81,9 +124,7 @@ function Get-ReleaseNotes {
     # Grab release notes from this first section only.
     $releaseNotesEndLine = $lines.Count
     for ($i = $headerLineIndex + 1; $i -lt $lines.Count; $i++) {
-        $candidate = Get-LeadingNoiseFreeText -Line $lines[$i]
-
-        if ($candidate.StartsWith('####')) {
+        if (Get-ReleaseHeaderData -Line $lines[$i]) {
             $releaseNotesEndLine = $i
             break
         }
