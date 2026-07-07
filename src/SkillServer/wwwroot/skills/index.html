@@ -45,13 +45,14 @@
 
 <script type="module">
 import { fetchSkills, fetchSkillVersions, fetchSkillMd } from '/js/api.js';
-import { getSkillName } from '/js/router.js';
+import { getSkillName, getSkillVersion } from '/js/router.js';
 
 const app = document.getElementById('app');
 const skillName = getSkillName();
+const requestedVersion = getSkillVersion();
 
 if (skillName) {
-    await renderDetail(skillName);
+    await renderDetail(skillName, requestedVersion);
 } else {
     await renderListing();
 }
@@ -89,29 +90,33 @@ async function renderListing() {
     }
 }
 
-async function renderDetail(name) {
+async function renderDetail(name, version) {
     document.title = `${name} - SkillServer Gallery`;
     try {
         const versions = await fetchSkillVersions(name);
-        const latest = versions.find(v => v.isLatest) || versions[0];
-        const skillMd = await fetchSkillMd(name, latest.version);
+        const targetVersion = version 
+            ? (versions.find(v => v.version === version) || versions.find(v => v.isLatest) || versions[0])
+            : (versions.find(v => v.isLatest) || versions[0]);
+        document.title = `${name}${version ? ' v' + targetVersion.version : ''} - SkillServer Gallery`;
+        const skillMd = await fetchSkillMd(name, targetVersion.version);
         app.innerHTML = `
             <div class="breadcrumb">
                 <a href="/">Home</a> <span>›</span>
                 <a href="/skills/">Skills</a> <span>›</span>
-                ${name}
+                <a href="/skills/${encodeURIComponent(name)}/">${name}</a>
+                ${version ? `<span>›</span><span>v${targetVersion.version}</span>` : ''}
             </div>
             <div class="detail-header">
                 <div class="detail-title">
                     <h1>${name}</h1>
-                    <span class="detail-version">v${latest.version} ${latest.isLatest ? '<span class="latest">← latest</span>' : ''}</span>
+                    <span class="detail-version">v${targetVersion.version} ${targetVersion.isLatest ? '<span class="latest">← latest</span>' : ''}</span>
                 </div>
-                ${latest.category ? `<div class="tags" style="margin-bottom:16px"><span class="tag">${latest.category}</span></div>` : ''}
-                <p class="detail-description">${latest.description || ''}</p>
+                ${targetVersion.category ? `<div class="tags" style="margin-bottom:16px"><span class="tag">${targetVersion.category}</span></div>` : ''}
+                <p class="detail-description">${targetVersion.description || ''}</p>
                 <div class="detail-meta">
                     <div class="meta-item"><span class="meta-label">Versions</span><span class="meta-value">${versions.length}</span></div>
-                    <div class="meta-item"><span class="meta-label">Size</span><span class="meta-value">${formatBytes(latest.sizeBytes)}</span></div>
-                    <div class="meta-item"><span class="meta-label">Published</span><span class="meta-value">${formatDate(latest.publishedAt)}</span></div>
+                    <div class="meta-item"><span class="meta-label">Size</span><span class="meta-value">${formatBytes(targetVersion.sizeBytes)}</span></div>
+                    <div class="meta-item"><span class="meta-label">Published</span><span class="meta-value">${formatDate(targetVersion.publishedAt)}</span></div>
                 </div>
             </div>
             <section class="section">
@@ -126,11 +131,11 @@ async function renderDetail(name) {
                 </div>
                 <div class="version-list">
                     ${versions.map(v => `
-                        <div class="version-row ${v.isLatest ? 'current' : ''}">
-                            <span class="version-tag ${v.isLatest ? 'latest' : ''}">v${v.version}</span>
+                        <a href="/skills/${encodeURIComponent(name)}/v/${encodeURIComponent(v.version)}/" class="version-row ${v.version === targetVersion.version ? 'current' : ''} ${v.isLatest && v.version !== targetVersion.version ? 'latest-link' : ''}" role="button" tabindex="0">
+                            <span class="version-tag ${v.version === targetVersion.version && v.isLatest ? 'latest' : ''}">v${v.version}</span>
                             <span class="version-date">${formatDate(v.publishedAt)}</span>
                             <span class="version-size">${formatBytes(v.sizeBytes)}</span>
-                        </div>
+                        </a>
                     `).join('')}
                 </div>
             </section>

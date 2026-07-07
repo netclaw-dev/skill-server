@@ -17,6 +17,18 @@ export function getSkillName() {
     return null;
 }
 
+export function getSkillVersion() {
+    const segments = getPathSegments();
+    if (segments.length >= 4 && segments[0] === 'skills' && segments[2] === 'v') {
+        return decodeURIComponent(segments[3]);
+    }
+    return null;
+}
+
+export function isVersionDetail() {
+    return getSkillVersion() !== null;
+}
+
 export function getSubAgentName() {
     const segments = getPathSegments();
     if (segments.length >= 2 && segments[0] === 'subagents') {

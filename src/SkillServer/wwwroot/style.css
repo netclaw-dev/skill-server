@@ -75,7 +75,7 @@ a:hover{color:var(--teal-dark)}
 
 /* ── SKILL CARDS ── */
 .skill-list{display:flex;flex-direction:column;gap:8px}
-.skill-card{display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);transition:all .2s;cursor:default}
+.skill-card{display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);transition:all .2s;cursor:pointer}
 .skill-card:hover{border-color:var(--border-light);background:var(--bg-card-hover);transform:translateX(4px)}
 .skill-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
 .skill-icon.purple{background:rgba(81,43,212,.15);color:var(--purple-light)}
@@ -148,9 +148,10 @@ a:hover{color:var(--teal-dark)}
 
 /* ── VERSION HISTORY ── */
 .version-list{display:flex;flex-direction:column;gap:4px}
-.version-row{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:var(--radius-sm);transition:background .2s;cursor:pointer}
-.version-row:hover{background:var(--bg-card)}
+.version-row{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:var(--radius-sm);transition:background .2s;cursor:pointer;color:var(--text)}
+.version-row:hover{background:var(--bg-card);color:var(--text)}
 .version-row.current{background:var(--bg-card)}
+.version-row.latest-link .version-tag::after{content:" (latest)";font-size:.7rem;color:var(--teal);font-weight:500}
 .version-tag{font-size:.85rem;font-weight:600;font-family:'Space Grotesk',monospace;min-width:80px}
 .version-tag.latest{color:var(--teal)}
 .version-date{font-size:.8rem;color:var(--text-dim)}

@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="SkillRepository.cs" company="Petabridge, LLC">
 //      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -362,7 +362,12 @@ public sealed class SkillRepository
             JOIN skills s ON s.id = skills_fts.rowid
             JOIN skill_versions sv ON sv.skill_id = s.id AND sv.is_latest = 1
             WHERE skills_fts MATCH @ftsQuery
-            ORDER BY rank
+            ORDER BY
+                CASE WHEN s.name = @query THEN 0
+                     WHEN s.name LIKE @query || '%' THEN 1
+                     WHEN skills_fts MATCH 'name:' || @ftsQuery THEN 2
+                     ELSE 3 END,
+                rank
             """;
 
         if (take.HasValue)
@@ -370,7 +375,7 @@ public sealed class SkillRepository
         if (skip.HasValue)
             sql += $" OFFSET {skip.Value}";
 
-        var versions = await connection.QueryAsync<SkillVersionWithMetadata>(sql, new { ftsQuery });
+        var versions = await connection.QueryAsync<SkillVersionWithMetadata>(sql, new { ftsQuery, query });
         return versions.ToList();
     }
 
