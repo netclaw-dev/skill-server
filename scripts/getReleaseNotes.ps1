@@ -22,14 +22,17 @@ function Get-ReleaseNotes {
         throw "Unable to parse release notes from $MarkdownFile."
     }
 
+    $leadingNoisePattern = '^[\p{Z}\p{Cf}\p{Cc}]+'
+    $headerPrefixPattern = '^([\p{Z}\p{Cf}\p{Cc}]*)####\s*'
+    
     # Find the first valid release header line.
     $headerLine = $null
     $headerLineIndex = -1
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        $candidate = $lines[$i].Trim()
-        $candidate = [regex]::Replace($candidate, '^[\uFEFF\u200B\u200C\u200D\u2060]+', '')
+        $candidate = [regex]::Replace($lines[$i], $leadingNoisePattern, '')
 
-        if ($candidate.StartsWith('####')) {
+        $headerMatch = [regex]::Match($candidate, $headerPrefixPattern)
+        if ($headerMatch.Success) {
             $headerLine = $candidate
             $headerLineIndex = $i
             break
@@ -46,7 +49,7 @@ function Get-ReleaseNotes {
     }
 
     # Extract header text, then version/date.
-    $headerLine = $headerLine.Substring(4).Trim()
+    $headerLine = $headerLine -replace "^([\p{Z}\p{Cf}\p{Cc}]*)####\s*", ""
     $headerLine = $headerLine -replace "\s*####\s*$", ""
 
     $headerParts = $headerLine -split " ", 2
@@ -67,7 +70,9 @@ function Get-ReleaseNotes {
     # Grab release notes from this first section only.
     $releaseNotesEndLine = $lines.Count
     for ($i = $headerLineIndex + 1; $i -lt $lines.Count; $i++) {
-        if ($lines[$i].Trim().StartsWith("####")) {
+        $candidate = [regex]::Replace($lines[$i], $leadingNoisePattern, '')
+
+        if ([regex]::IsMatch($candidate, $headerPrefixPattern)) {
             $releaseNotesEndLine = $i
             break
         }
