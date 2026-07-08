@@ -274,6 +274,15 @@ public sealed record ApiKeySummary
     public DateTimeOffset? ExpiresAt { get; init; }
 }
 
+public sealed record AppInfoResponse
+{
+    [JsonPropertyName("version")]
+    public required string Version { get; init; }
+
+    [JsonPropertyName("assemblyVersion")]
+    public required string AssemblyVersion { get; init; }
+}
+
 /// <summary>
 /// Response from the health check endpoint.
 /// </summary>

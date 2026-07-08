@@ -39,13 +39,16 @@
       <span>·</span>
       <a href="https://github.com/netclaw-dev">GitHub</a>
     </div>
-    <div class="footer-version">SkillServer v0.5.0 · Self-hosted agent infrastructure</div>
+    <div class="footer-version"><span data-app-version-label>SkillServer</span> · Self-hosted agent infrastructure</div>
   </div>
 </footer>
 
 <script type="module">
 import { fetchSkills, fetchSkillVersions, fetchSkillMd } from '/js/api.js';
+import { renderAppVersion } from '/js/footer.js';
 import { getSkillName, getSkillVersion } from '/js/router.js';
+
+renderAppVersion();
 
 const app = document.getElementById('app');
 const skillName = getSkillName();

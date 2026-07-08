@@ -6,6 +6,12 @@
 
 const API_BASE = '/api/v1';
 
+export async function fetchAppInfo() {
+    const res = await fetch(`${API_BASE}/info`);
+    if (!res.ok) throw new Error(`Failed to fetch app info: ${res.status}`);
+    return res.json();
+}
+
 export async function fetchSkills(query, skip, take) {
     const params = new URLSearchParams();
     if (query) params.set('q', query);

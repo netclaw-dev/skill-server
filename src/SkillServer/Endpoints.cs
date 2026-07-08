@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection;
 using System.Text.Json;
 using SkillServer.Data;
 using SkillServer.Models;
@@ -24,10 +25,29 @@ public static class Endpoints
 
     private static void MapV1Api(this WebApplication app)
     {
+        app.MapAppInfoEndpoints();
         app.MapSkillEndpoints();
         app.MapSubAgentEndpoints();
         app.MapBlobEndpoints();
         app.MapApiKeyEndpoints();
+    }
+
+    private static void MapAppInfoEndpoints(this WebApplication app)
+    {
+        app.MapGet("/api/v1/info", () =>
+        {
+            var assembly = typeof(Endpoints).Assembly;
+            var assemblyVersion = assembly.GetName().Version?.ToString() ?? "unknown";
+            var version = assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? assemblyVersion;
+
+            return Results.Json(new AppInfoResponse
+            {
+                Version = version,
+                AssemblyVersion = assemblyVersion
+            }, SkillServerJsonContext.Default.AppInfoResponse);
+        });
     }
 
     private static void MapDiscoveryEndpoints(this WebApplication app)

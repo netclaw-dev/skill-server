@@ -30,6 +30,7 @@ namespace SkillServer.Models;
 [JsonSerializable(typeof(CreateApiKeyResponse))]
 [JsonSerializable(typeof(ApiKeySummary))]
 [JsonSerializable(typeof(IReadOnlyList<ApiKeySummary>))]
+[JsonSerializable(typeof(AppInfoResponse))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateRequestItem>))]
 [JsonSerializable(typeof(IReadOnlyList<CheckUpdateResponseItem>))]
 [JsonSerializable(typeof(HealthResponse))]

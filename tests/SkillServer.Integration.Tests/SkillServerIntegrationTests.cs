@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.IO.Compression;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -56,6 +57,24 @@ public sealed class SkillServerIntegrationTests
         Assert.NotNull(body);
         Assert.Equal("healthy", body.Status);
         Assert.True(body.Timestamp > DateTimeOffset.MinValue);
+    }
+
+    [Fact]
+    public async Task AppInfo_ReturnsAssemblyVersion()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var assembly = typeof(Program).Assembly;
+        var expectedAssemblyVersion = assembly.GetName().Version?.ToString() ?? "unknown";
+        var expectedVersion = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? expectedAssemblyVersion;
+
+        var body = await _fixture.HttpClient.GetFromJsonAsync<SkillServer.Models.AppInfoResponse>(
+            "/api/v1/info", ct);
+
+        Assert.NotNull(body);
+        Assert.Equal(expectedVersion, body.Version);
+        Assert.Equal(expectedAssemblyVersion, body.AssemblyVersion);
     }
 
     [Fact]
