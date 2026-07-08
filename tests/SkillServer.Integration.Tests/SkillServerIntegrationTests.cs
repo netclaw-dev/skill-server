@@ -1033,6 +1033,37 @@ public sealed class SkillServerIntegrationTests
         Assert.NotNull(version);
         Assert.Equal(3, version.FileCount);
 
+        var listedResources = await _fixture.HttpClient.GetFromJsonAsync<IReadOnlyList<SkillServer.Models.SkillResourceSummary>>(
+            $"/api/v1/skills/{skillName}/1.0.0/resources", ct);
+        Assert.NotNull(listedResources);
+        Assert.Equal([
+            "references/guide.md",
+            "scripts/setup.sh",
+            "tools/check"
+        ], listedResources.Select(r => r.Path).ToArray());
+
+        var guideResource = Assert.Single(listedResources, r => r.Path == "references/guide.md");
+        Assert.Equal("text/markdown", guideResource.ContentType);
+        Assert.True(guideResource.Previewable);
+        Assert.Equal("markdown", guideResource.Language);
+        Assert.Equal(ComputeSha256Digest(Encoding.UTF8.GetBytes(referenceContent)), guideResource.Sha256);
+
+        var scriptResource = Assert.Single(listedResources, r => r.Path == "scripts/setup.sh");
+        Assert.Equal("application/x-sh", scriptResource.ContentType);
+        Assert.True(scriptResource.Previewable);
+        Assert.Equal("shell", scriptResource.Language);
+        Assert.Equal(ComputeSha256Digest(Encoding.UTF8.GetBytes(scriptContent)), scriptResource.Sha256);
+        Assert.EndsWith(
+            $"/api/v1/skills/{skillName}/1.0.0/scripts/setup.sh",
+            scriptResource.Url,
+            StringComparison.Ordinal);
+
+        var executableResource = Assert.Single(listedResources, r => r.Path == "tools/check");
+        Assert.Equal("application/octet-stream", executableResource.ContentType);
+        Assert.False(executableResource.Previewable);
+        Assert.Null(executableResource.Language);
+        Assert.Equal(0x1ED, executableResource.UnixMode);
+
         var downloadedSkill = await _fixture.Client.GetSkillFileAsStringAsync(skillName, "1.0.0", ct: ct);
         Assert.Contains("# Resource Upload Test", downloadedSkill);
 
@@ -1132,6 +1163,11 @@ public sealed class SkillServerIntegrationTests
         var version = await _fixture.Client.GetVersionAsync(skillName, "1.0.0", ct);
         Assert.NotNull(version);
         Assert.Equal(0, version.FileCount);
+
+        var resources = await _fixture.HttpClient.GetFromJsonAsync<IReadOnlyList<SkillServer.Models.SkillResourceSummary>>(
+            $"/api/v1/skills/{skillName}/1.0.0/resources", ct);
+        Assert.NotNull(resources);
+        Assert.Empty(resources);
     }
 
     [Fact]

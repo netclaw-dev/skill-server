@@ -44,7 +44,7 @@
 </footer>
 
 <script type="module">
-import { fetchSkills, fetchSkillVersions, fetchSkillMd } from '/js/api.js';
+import { fetchSkills, fetchSkillVersions, fetchSkillMd, fetchSkillResources, fetchSkillResource, getSkillResourceUrl } from '/js/api.js';
 import { renderAppVersion } from '/js/footer.js';
 import { getSkillName, getSkillVersion } from '/js/router.js';
 
@@ -53,6 +53,7 @@ renderAppVersion();
 const app = document.getElementById('app');
 const skillName = getSkillName();
 const requestedVersion = getSkillVersion();
+let selectedFileRequestId = 0;
 
 if (skillName) {
     await renderDetail(skillName, requestedVersion);
@@ -107,7 +108,10 @@ async function renderDetail(name, version) {
             ? (versions.find(v => v.version === version) || versions.find(v => v.isLatest) || versions[0])
             : (versions.find(v => v.isLatest) || versions[0]);
         document.title = `${name}${version ? ' v' + targetVersion.version : ''} - SkillServer Gallery`;
-        const skillMd = await fetchSkillMd(name, targetVersion.version);
+        const [skillMd, resources] = await Promise.all([
+            fetchSkillMd(name, targetVersion.version),
+            fetchSkillResources(name, targetVersion.version)
+        ]);
         app.innerHTML = `
             <div class="breadcrumb">
                 <a href="/">Home</a> <span>›</span>
@@ -130,9 +134,16 @@ async function renderDetail(name, version) {
             </div>
             <section class="section">
                 <div class="section-header">
-                    <h2>SKILL.md</h2>
+                    <h2>Files</h2>
                 </div>
-                <div class="code-block"><pre>${escapeHtml(skillMd)}</pre></div>
+                <div class="file-browser">
+                    <div class="file-tree" aria-label="Skill files">
+                        ${renderFileTree(targetVersion, resources)}
+                    </div>
+                    <div class="file-preview" id="file-preview">
+                        ${renderTextPreview(createSkillMdFile(targetVersion), skillMd)}
+                    </div>
+                </div>
             </section>
             <section class="section">
                 <div class="section-header">
@@ -149,6 +160,7 @@ async function renderDetail(name, version) {
                 </div>
             </section>
         `;
+        wireFileBrowser(name, targetVersion.version, targetVersion, skillMd, resources);
     } catch (err) {
         app.innerHTML = `<div class="error">Failed to load skill: ${err.message}</div>`;
     }
@@ -166,6 +178,125 @@ function renderSkillCard(skill) {
                 ${skill.category ? `<div class="tags"><span class="tag">${skill.category}</span></div>` : ''}
             </div>
         </a>
+    `;
+}
+
+function createSkillMdFile(version) {
+    return {
+        path: 'SKILL.md',
+        sizeBytes: version.sizeBytes,
+        contentType: 'text/markdown',
+        previewable: true,
+        language: 'markdown'
+    };
+}
+
+function renderFileTree(version, resources) {
+    const rows = [{ type: 'file', depth: 0, file: createSkillMdFile(version) }];
+    const seenDirectories = new Set();
+
+    for (const resource of resources.slice().sort((a, b) => a.path.localeCompare(b.path))) {
+        const segments = resource.path.split('/');
+
+        for (let i = 0; i < segments.length - 1; i++) {
+            const directoryPath = segments.slice(0, i + 1).join('/');
+            if (seenDirectories.has(directoryPath)) continue;
+
+            seenDirectories.add(directoryPath);
+            rows.push({ type: 'directory', depth: i, name: segments[i] });
+        }
+
+        rows.push({ type: 'file', depth: segments.length - 1, file: resource });
+    }
+
+    return rows.map(row => row.type === 'directory'
+        ? `<div class="file-tree-row directory" style="--depth:${row.depth}"><span class="file-icon">▸</span><span>${escapeHtml(row.name)}/</span></div>`
+        : renderFileTreeButton(row.file, row.depth)).join('');
+}
+
+function renderFileTreeButton(file, depth) {
+    const active = file.path === 'SKILL.md' ? ' active' : '';
+    const meta = file.path === 'SKILL.md' ? 'entry' : formatBytes(file.sizeBytes);
+
+    return `
+        <button type="button" class="file-tree-row file${active}" style="--depth:${depth}" data-file-path="${escapeAttribute(file.path)}">
+            <span class="file-icon">${file.previewable ? '•' : '⬢'}</span>
+            <span class="file-name">${escapeHtml(file.path.split('/').pop())}</span>
+            <span class="file-tree-meta">${escapeHtml(meta)}</span>
+        </button>
+    `;
+}
+
+function wireFileBrowser(name, version, targetVersion, skillMd, resources) {
+    const preview = document.getElementById('file-preview');
+    if (!preview) return;
+
+    const files = new Map(resources.map(resource => [resource.path, resource]));
+    files.set('SKILL.md', createSkillMdFile(targetVersion));
+
+    document.querySelectorAll('[data-file-path]').forEach(button => {
+        button.addEventListener('click', async () => {
+            const path = button.getAttribute('data-file-path');
+            const file = files.get(path);
+            if (!file) return;
+
+            document.querySelectorAll('[data-file-path]').forEach(item => item.classList.remove('active'));
+            button.classList.add('active');
+
+            await renderSelectedFile(preview, name, version, file, skillMd, ++selectedFileRequestId);
+        });
+    });
+}
+
+async function renderSelectedFile(preview, name, version, file, skillMd, requestId) {
+    if (!file.previewable) {
+        preview.innerHTML = renderUnavailablePreview(name, version, file);
+        return;
+    }
+
+    preview.innerHTML = `<div class="file-preview-state">Loading ${escapeHtml(file.path)}...</div>`;
+
+    try {
+        const content = file.path === 'SKILL.md'
+            ? skillMd
+            : await fetchSkillResource(name, version, file.path);
+        if (requestId !== selectedFileRequestId) return;
+
+        preview.innerHTML = renderTextPreview(file, content);
+    } catch (err) {
+        if (requestId !== selectedFileRequestId) return;
+
+        preview.innerHTML = `<div class="error">Failed to load ${escapeHtml(file.path)}: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function renderTextPreview(file, content) {
+    return `
+        <div class="file-preview-header">
+            <div>
+                <div class="file-preview-title">${escapeHtml(file.path)}</div>
+                <div class="file-preview-subtitle">${escapeHtml(file.contentType || 'text/plain')}</div>
+            </div>
+            <div class="file-preview-meta">${file.language ? escapeHtml(file.language) : 'text'} · ${formatBytes(file.sizeBytes)}</div>
+        </div>
+        <div class="code-block file-code"><pre><code class="language-${escapeAttribute(file.language || 'text')}">${escapeHtml(content)}</code></pre></div>
+    `;
+}
+
+function renderUnavailablePreview(name, version, file) {
+    const url = getSkillResourceUrl(name, version, file.path);
+    return `
+        <div class="file-preview-header">
+            <div>
+                <div class="file-preview-title">${escapeHtml(file.path)}</div>
+                <div class="file-preview-subtitle">${escapeHtml(file.contentType || 'application/octet-stream')}</div>
+            </div>
+            <div class="file-preview-meta">${formatBytes(file.sizeBytes)}</div>
+        </div>
+        <div class="file-preview-state">
+            Preview unavailable for this file type or size.
+            <a href="${escapeAttribute(url)}" target="_blank" rel="noopener">Open raw file</a>
+        </div>
     `;
 }
 
@@ -192,6 +323,14 @@ function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+function escapeAttribute(str) {
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
 }
 </script>
 

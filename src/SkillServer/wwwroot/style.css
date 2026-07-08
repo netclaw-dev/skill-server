@@ -146,6 +146,26 @@ a:hover{color:var(--teal-dark)}
 .code-block .string{color:var(--teal)}
 .code-block .title{color:var(--text)}
 
+/* ── FILE BROWSER ── */
+.file-browser{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:16px;align-items:start}
+.file-tree{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:8px;max-height:620px;overflow:auto}
+.file-tree-row{display:flex;align-items:center;gap:8px;width:100%;min-height:34px;padding:7px 10px 7px calc(10px + (var(--depth) * 18px));border-radius:var(--radius-sm);font-family:inherit;font-size:.82rem;text-align:left;color:var(--text-muted)}
+.file-tree-row.directory{color:var(--text-dim);font-weight:600;text-transform:none}
+.file-tree-row.file{background:transparent;border:0;cursor:pointer;transition:background .2s,color .2s}
+.file-tree-row.file:hover{background:var(--bg-card-hover);color:var(--text)}
+.file-tree-row.file.active{background:rgba(0,212,170,.08);color:var(--teal)}
+.file-icon{width:14px;flex-shrink:0;color:var(--text-dim)}
+.file-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-tree-meta{margin-left:auto;font-size:.72rem;color:var(--text-dim);white-space:nowrap}
+.file-preview{min-width:0}
+.file-preview-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 16px;background:var(--bg-card);border:1px solid var(--border);border-bottom:0;border-radius:var(--radius) var(--radius) 0 0}
+.file-preview-title{font-size:.9rem;font-weight:600;color:var(--text);font-family:'Fira Code','Cascadia Code',monospace;word-break:break-all}
+.file-preview-subtitle,.file-preview-meta{font-size:.75rem;color:var(--text-dim)}
+.file-preview-meta{white-space:nowrap;text-align:right}
+.file-code{border-radius:0 0 var(--radius) var(--radius);max-height:620px}
+.file-preview-state{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;color:var(--text-muted);font-size:.9rem}
+.file-preview-state a{margin-left:8px;font-weight:600}
+
 /* ── VERSION HISTORY ── */
 .version-list{display:flex;flex-direction:column;gap:4px}
 .version-row{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:var(--radius-sm);transition:background .2s;cursor:pointer;color:var(--text)}
@@ -190,6 +210,10 @@ a:hover{color:var(--teal-dark)}
   .main{padding:32px 16px}
   .search-kbd{display:none}
   .detail-meta{flex-direction:column;gap:12px}
+  .file-browser{grid-template-columns:1fr}
+  .file-tree{max-height:260px}
+  .file-preview-header{flex-direction:column;gap:6px}
+  .file-preview-meta{text-align:left}
   .filter-bar{gap:8px}
 }
 @media(max-width:480px){

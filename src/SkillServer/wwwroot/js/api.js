@@ -36,6 +36,23 @@ export async function fetchSkillMd(name, version) {
     return res.text();
 }
 
+export async function fetchSkillResources(name, version) {
+    const res = await fetch(`${API_BASE}/skills/${encodeURIComponent(name)}/${encodeURIComponent(version)}/resources`);
+    if (!res.ok) throw new Error(`Failed to fetch skill resources: ${res.status}`);
+    return res.json();
+}
+
+export async function fetchSkillResource(name, version, path) {
+    const res = await fetch(getSkillResourceUrl(name, version, path));
+    if (!res.ok) throw new Error(`Failed to fetch skill resource: ${res.status}`);
+    return res.text();
+}
+
+export function getSkillResourceUrl(name, version, path) {
+    const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+    return `${API_BASE}/skills/${encodeURIComponent(name)}/${encodeURIComponent(version)}/${encodedPath}`;
+}
+
 export async function fetchSubAgents() {
     const res = await fetch(`${API_BASE}/subagents/`);
     if (!res.ok) throw new Error(`Failed to fetch subagents: ${res.status}`);

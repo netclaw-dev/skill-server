@@ -127,6 +127,33 @@ public sealed record SkillVersionSummary
     public required int FileCount { get; init; }
 }
 
+public sealed record SkillResourceSummary
+{
+    [JsonPropertyName("path")]
+    public required string Path { get; init; }
+
+    [JsonPropertyName("url")]
+    public required string Url { get; init; }
+
+    [JsonPropertyName("sha256")]
+    public required string Sha256 { get; init; }
+
+    [JsonPropertyName("sizeBytes")]
+    public required long SizeBytes { get; init; }
+
+    [JsonPropertyName("unixMode")]
+    public int? UnixMode { get; init; }
+
+    [JsonPropertyName("contentType")]
+    public required string ContentType { get; init; }
+
+    [JsonPropertyName("previewable")]
+    public required bool Previewable { get; init; }
+
+    [JsonPropertyName("language")]
+    public string? Language { get; init; }
+}
+
 public sealed record SubAgentSummary
 {
     [JsonPropertyName("name")]

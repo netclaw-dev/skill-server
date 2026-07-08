@@ -14,6 +14,8 @@ namespace SkillServer;
 
 public static class Endpoints
 {
+    private const long MaxResourcePreviewBytes = 256 * 1024;
+
     public static WebApplication MapSkillServerEndpoints(this WebApplication app)
     {
         app.MapDiscoveryEndpoints();
@@ -174,6 +176,7 @@ public static class Endpoints
         skills.MapGet("/{name}/{version}", GetVersion);
         skills.MapGet("/{name}/{version}/SKILL.md", DownloadSkillMd);
         skills.MapGet("/{name}/{version}/archive.zip", DownloadArchive);
+        skills.MapGet("/{name}/{version}/resources", ListSkillResources);
         skills.MapGet("/{name}/{version}/{*path}", DownloadResource);
         skills.MapPost("/check-updates", CheckUpdates);
         skills.MapPost("/", UploadSkill).DisableAntiforgery().AddEndpointFilter<ApiKeyEndpointFilter>();
@@ -283,6 +286,43 @@ public static class Endpoints
         };
 
         return Results.Json(summary, SkillServerJsonContext.Default.SkillVersionSummary);
+    }
+
+    private static async Task<IResult> ListSkillResources(
+        string name,
+        string version,
+        SkillRepository repository,
+        CancellationToken ct)
+    {
+        var skill = await repository.GetSkillByNameAsync(name, ct);
+        if (skill is null)
+            return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Skill '{name}' not found." });
+
+        var skillVersion = await repository.GetVersionAsync(skill.Id, version, ct);
+        if (skillVersion is null)
+            return Results.NotFound(new ErrorResponse { Error = "not_found", Message = $"Version '{version}' not found for skill '{name}'." });
+
+        var files = await repository.GetFilesAsync(skillVersion.Id, ct);
+        var summaries = files
+            .OrderBy(f => f.RelativePath, StringComparer.Ordinal)
+            .Select(f =>
+            {
+                var contentType = GetContentType(f.RelativePath);
+                return new SkillResourceSummary
+                {
+                    Path = f.RelativePath,
+                    Url = $"/api/v1/skills/{Uri.EscapeDataString(skill.Name)}/{Uri.EscapeDataString(skillVersion.Version)}/{EncodeResourcePath(f.RelativePath)}",
+                    Sha256 = Sha256Digest.Create(f.Sha256).Value,
+                    SizeBytes = f.SizeBytes,
+                    UnixMode = f.UnixMode,
+                    ContentType = contentType,
+                    Previewable = IsPreviewableResource(contentType, f.SizeBytes),
+                    Language = GetResourceLanguage(f.RelativePath)
+                };
+            })
+            .ToList();
+
+        return Results.Json(summaries, SkillServerJsonContext.Default.IReadOnlyListSkillResourceSummary);
     }
 
     private static async Task<IResult> DownloadSkillMd(
@@ -901,10 +941,38 @@ public static class Endpoints
         ".json" => "application/json",
         ".yaml" or ".yml" => "application/x-yaml",
         ".py" => "text/x-python",
-        ".sh" => "application/x-sh",
+        ".sh" or ".bash" => "application/x-sh",
+        ".ps1" or ".psm1" => "text/x-powershell",
         ".js" => "application/javascript",
         ".ts" => "application/typescript",
         ".txt" => "text/plain",
         _ => "application/octet-stream"
     };
+
+    private static string? GetResourceLanguage(string path) => Path.GetExtension(path).ToLowerInvariant() switch
+    {
+        ".md" => "markdown",
+        ".json" => "json",
+        ".yaml" or ".yml" => "yaml",
+        ".py" => "python",
+        ".sh" or ".bash" => "shell",
+        ".ps1" or ".psm1" => "powershell",
+        ".js" => "javascript",
+        ".ts" => "typescript",
+        ".txt" => "text",
+        _ => null
+    };
+
+    private static bool IsPreviewableResource(string contentType, long sizeBytes)
+    {
+        if (sizeBytes > MaxResourcePreviewBytes)
+            return false;
+
+        return contentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase) ||
+               contentType is "application/json" or "application/x-yaml" or "application/x-sh" or
+                   "application/javascript" or "application/typescript";
+    }
+
+    private static string EncodeResourcePath(string path) =>
+        string.Join("/", path.Split('/').Select(Uri.EscapeDataString));
 }
