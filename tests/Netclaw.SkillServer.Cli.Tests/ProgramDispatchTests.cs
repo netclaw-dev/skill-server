@@ -96,6 +96,45 @@ public sealed class ProgramDispatchTests : IDisposable
         Assert.Contains("Server URL not configured", result.StdErr);
     }
 
+    [Fact]
+    public async Task ListSubAgents_RequiresServerUrl()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        var result = await RunCliAsync(["list-subagents"], ct);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("Server URL not configured", result.StdErr);
+    }
+
+    [Fact]
+    public async Task ListSubAgents_DoesNotRequireApiKey()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // list-subagents mirrors 'list': a server URL is required, but no API key.
+        // With only a server URL set, the CLI must not short-circuit on missing auth.
+        var result = await RunCliAsync(
+            ["list-subagents", "--server-url", "http://127.0.0.1:59999"], ct);
+
+        Assert.DoesNotContain("Authentication required", result.StdErr);
+        Assert.DoesNotContain("Authentication required", result.StdOut);
+    }
+
+    [Fact]
+    public async Task DeleteSubAgent_RequiresApiKey()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // delete-subagent mirrors 'delete': it is an authenticated write operation.
+        var result = await RunCliAsync(
+            ["delete-subagent", "support-agent", "1.0.0", "--yes", "--server-url", "http://127.0.0.1:59999"],
+            ct);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("Authentication required", result.StdErr);
+    }
+
     private static async Task<CliResult> RunCliAsync(string[] args, CancellationToken ct)
     {
         var dllPath = typeof(LintCommand).Assembly.Location;

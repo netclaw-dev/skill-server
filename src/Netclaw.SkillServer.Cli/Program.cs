@@ -53,7 +53,7 @@ if (parsedArgs.Help)
 var resolver = new ConfigResolver();
 var config = resolver.Resolve(parsedArgs.ServerUrl, parsedArgs.ApiKey);
 
-var requiresAuth = parsedArgs.Command is not "list" and not "versions" and not "verify" and not "download-subagent";
+var requiresAuth = parsedArgs.Command is not "list" and not "list-subagents" and not "versions" and not "verify" and not "download-subagent";
 
 if (!config.HasServerUrl)
 {
@@ -82,7 +82,9 @@ static async Task<int> DispatchAsync(ParsedArgs parsedArgs, SkillServerClient cl
         "download-subagent" => await DownloadSubAgentCommand.ExecuteAsync(parsedArgs, client),
         "publish-all" => await PublishAllCommand.ExecuteAsync(parsedArgs, client),
         "delete" => await DeleteCommand.ExecuteAsync(parsedArgs, client),
+        "delete-subagent" => await DeleteSubAgentCommand.ExecuteAsync(parsedArgs, client),
         "list" => await ListCommand.ExecuteAsync(parsedArgs, client),
+        "list-subagents" => await ListSubAgentsCommand.ExecuteAsync(parsedArgs, client),
         "versions" => await VersionsCommand.ExecuteAsync(parsedArgs, client),
         "verify" => await VerifyCommand.ExecuteAsync(parsedArgs, client),
         "api-key" => await ApiKeyCommand.ExecuteAsync(parsedArgs, client),
@@ -127,7 +129,9 @@ static void PrintHelp()
     Console.WriteLine("  publish-all <path>        Batch-publish all skills in a directory");
     Console.WriteLine("  lint <path>               Validate skills or sub-agents (no auth required)");
     Console.WriteLine("  delete <name> <version>   Delete a published skill version");
+    Console.WriteLine("  delete-subagent <n> <v>   Delete a published sub-agent version");
     Console.WriteLine("  list                      List skills on the server");
+    Console.WriteLine("  list-subagents            List sub-agents on the server");
     Console.WriteLine("  versions <name>           List all versions of a skill");
     Console.WriteLine("  verify <path>             Verify local skill matches published version");
     Console.WriteLine("  config                    Manage CLI configuration");

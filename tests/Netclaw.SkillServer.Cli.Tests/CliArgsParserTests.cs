@@ -155,6 +155,16 @@ public sealed class CliArgsParserTests
     }
 
     [Fact]
+    public void Parse_ListSubAgentsCommand_WithJsonOutput()
+    {
+        var result = CliArgsParser.Parse(["list-subagents", "--output", "json"]);
+
+        Assert.Equal("list-subagents", result.Command);
+        Assert.Equal("json", result.OutputFormat);
+        Assert.Empty(result.Positional);
+    }
+
+    [Fact]
     public void Parse_DeleteCommand_WithArgs()
     {
         var result = CliArgsParser.Parse(["delete", "my-skill", "1.0.0", "--yes"]);
@@ -162,6 +172,18 @@ public sealed class CliArgsParserTests
         Assert.Equal("delete", result.Command);
         Assert.Equal(2, result.Positional.Count);
         Assert.Equal("my-skill", result.Positional[0]);
+        Assert.Equal("1.0.0", result.Positional[1]);
+        Assert.True(result.Yes);
+    }
+
+    [Fact]
+    public void Parse_DeleteSubAgentCommand_WithArgs()
+    {
+        var result = CliArgsParser.Parse(["delete-subagent", "support-agent", "1.0.0", "--yes"]);
+
+        Assert.Equal("delete-subagent", result.Command);
+        Assert.Equal(2, result.Positional.Count);
+        Assert.Equal("support-agent", result.Positional[0]);
         Assert.Equal("1.0.0", result.Positional[1]);
         Assert.True(result.Yes);
     }

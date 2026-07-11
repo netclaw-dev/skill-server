@@ -13,6 +13,7 @@ namespace Netclaw.SkillServer.Cli.Json;
 [JsonSerializable(typeof(CliConfig))]
 [JsonSerializable(typeof(IReadOnlyList<SkillSummary>))]
 [JsonSerializable(typeof(IReadOnlyList<SkillVersionSummary>))]
+[JsonSerializable(typeof(IReadOnlyList<SubAgentSummary>))]
 [JsonSerializable(typeof(IReadOnlyList<ApiKeySummary>))]
 [JsonSerializable(typeof(SkillUploadResponse))]
 [JsonSerializable(typeof(ErrorResponse))]

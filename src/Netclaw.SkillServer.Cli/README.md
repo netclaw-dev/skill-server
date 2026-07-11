@@ -101,6 +101,12 @@ skillserver versions my-skill
 
 # JSON output
 skillserver list --output json
+
+# List all sub-agents
+skillserver list-subagents
+
+# Sub-agents as JSON
+skillserver list-subagents --output json
 ```
 
 ### Verification
@@ -141,6 +147,12 @@ skillserver delete my-skill 1.0.0
 
 # Skip confirmation
 skillserver delete my-skill 1.0.0 --yes
+
+# Delete a sub-agent version (with confirmation prompt)
+skillserver delete-subagent support-agent 1.0.0
+
+# Skip confirmation
+skillserver delete-subagent support-agent 1.0.0 --yes
 ```
 
 ### API Key Management
