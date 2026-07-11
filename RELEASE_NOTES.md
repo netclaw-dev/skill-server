@@ -1,3 +1,8 @@
+#### 0.4.0-beta.6 July 10th 2026 ####
+
+**New Features**
+- Add `list-subagents` and `delete-subagent` CLI commands to enumerate and remove published sub-agent versions, bringing the `skillserver` CLI to parity with the existing skill `list`/`delete` commands (#129)
+
 #### 0.4.0-beta.5 July 8th 2026 ####
 
 **New Features**
