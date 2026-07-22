@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Net;
 using System.Text.Json;
 using Netclaw.SkillClient;
 using Netclaw.SkillServer.Cli.Json;
@@ -22,7 +23,21 @@ internal static class VersionsCommand
         }
 
         var name = args.Positional[0];
-        var versions = await client.GetSkillVersionsAsync(name);
+
+        IReadOnlyList<SkillVersionSummary> versions;
+        try
+        {
+            versions = await client.GetSkillVersionsAsync(name);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            ConsoleOutput.WriteError($"Skill '{name}' not found.");
+            return 1;
+        }
+        catch (HttpRequestException ex)
+        {
+            return ConsoleOutput.HandleHttpError(ex);
+        }
 
         if (args.OutputFormat == "json")
         {
