@@ -1,6 +1,22 @@
+name: skillserver
+
 services:
+  # The image runs as non-root uid 1654 (app), but Docker creates the named
+  # volume's mount point as root:root, so the app can't create the SQLite DB.
+  # This one-shot init container fixes ownership before the server starts.
+  init-data:
+    image: ghcr.io/netclaw-dev/skillserver:latest
+    user: "0:0"
+    volumes:
+      - skill-data:/data
+    entrypoint: ["sh", "-c", "chown -R 1654:1654 /data"]
+    restart: "no"
+
   skill-server:
-    image: skillserver:latest
+    image: ghcr.io/netclaw-dev/skillserver:latest
+    depends_on:
+      init-data:
+        condition: service_completed_successfully
     ports:
       - "8080:8080"
     volumes:
