@@ -5,7 +5,7 @@ services:
   # volume's mount point as root:root, so the app can't create the SQLite DB.
   # This one-shot init container fixes ownership before the server starts.
   init-data:
-    image: ghcr.io/netclaw-dev/skillserver:0.4.0
+    image: ghcr.io/netclaw-dev/skillserver:latest
     user: "0:0"
     volumes:
       - skill-data:/data
@@ -13,7 +13,7 @@ services:
     restart: "no"
 
   skill-server:
-    image: ghcr.io/netclaw-dev/skillserver:0.4.0
+    image: ghcr.io/netclaw-dev/skillserver:latest
     depends_on:
       init-data:
         condition: service_completed_successfully
