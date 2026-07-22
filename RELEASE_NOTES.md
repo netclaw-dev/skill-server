@@ -1,3 +1,9 @@
+#### 0.4.1 July 22nd 2026 ####
+
+**Bug Fixes**
+- Fix CLI `versions` command crashing with a 404 when a skill has no published versions — now returns gracefully (#143)
+- Fix Docker quick-start compose configuration so it runs as non-root against a writable `/data` volume (#141)
+
 #### 0.4.0 July 14th 2026 ####
 
 **What's New**
