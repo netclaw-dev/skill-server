@@ -20,11 +20,28 @@
   </PropertyGroup>
   <!-- Version Management -->
   <PropertyGroup>
-    <VersionPrefix>0.4.0-beta.6</VersionPrefix>
+    <VersionPrefix>0.4.0</VersionPrefix>
     <VersionSuffix>
     </VersionSuffix>
-    <PackageReleaseNotes>**New Features**
-- Add `list-subagents` and `delete-subagent` CLI commands to enumerate and remove published sub-agent versions, bringing the `skillserver` CLI to parity with the existing skill `list`/`delete` commands (#129)</PackageReleaseNotes>
+    <PackageReleaseNotes>**What's New**
+
+This release adds a fully interactive gallery UI, first-class sub-agent support, and native manifest endpoints for destination-agnostic skill sync.
+
+**New Features**
+- Add interactive gallery UI with client-side search, skill version history navigation, and a resource browser for viewing SKILL.md and resource files
+- Add first-class sub-agent support — storage endpoints, CLI commands (`publish-subagent`, `list-subagents`, `delete-subagent`, `download-subagent`, `lint subagent`), and batch publishing
+- Add native manifest endpoints (`/manifest.json` and linked documents) for RFC-compatible skill and sub-agent sync
+- Add deterministic `archive.zip` downloads for resourceful skills
+- Add API versioning and native manifest client support in `Netclaw.SkillClient`
+- Add copy button to code blocks in the gallery
+
+**Improvements**
+- Improve skill search relevance with exact and prefix name matching prioritized over description-only matches
+- Preserve executable permission bits (Unix mode) for skill resources in downloaded archives
+
+**Security**
+- Resolve CVE-2026-49451 / GHSA-v5pm-xwqc-g5wc by pinning `Microsoft.OpenApi` to 2.7.5 (#104)
+- Resolve GHSA-hv8m-jj95-wg3x (MessagePack/StreamJsonRpc LZ4 decompression DoS) by upgrading MessagePack to 3.1.8</PackageReleaseNotes>
   </PropertyGroup>
   <!-- Default: non-packable unless explicitly set -->
   <PropertyGroup>

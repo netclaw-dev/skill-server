@@ -1,59 +1,26 @@
-#### 0.4.0-beta.6 July 10th 2026 ####
+#### 0.4.0 July 14th 2026 ####
+
+**What's New**
+
+This release adds a fully interactive gallery UI, first-class sub-agent support, and native manifest endpoints for destination-agnostic skill sync.
 
 **New Features**
-- Add `list-subagents` and `delete-subagent` CLI commands to enumerate and remove published sub-agent versions, bringing the `skillserver` CLI to parity with the existing skill `list`/`delete` commands (#129)
-
-#### 0.4.0-beta.5 July 8th 2026 ####
-
-**New Features**
-- Add gallery resource browser — expose skill resource metadata and render a read-only file browser in the gallery for SKILL.md and resource files
-- Add runtime gallery version display — expose SkillServer assembly metadata through `/api/v1/info` and render gallery footer versions from runtime app metadata
-
-**Bug Fixes**
-- Fix `?q=` query param not being read on skills listing page — navigating from homepage search to `/skills/?q=foo` now pre-fills the search box, shows filtered results, and updates the heading to 'Search Results' (#124)
-
-**Internal**
-- Remove duplicate `release_notes.md` (lowercase variant) to prevent checkout conflicts on case-insensitive filesystems (Windows)
-
-#### 0.4.0-beta.4 July 7th 2026 ####
-
-**New Features**
-- Add batch sub-agent publishing with a new `publish-subagents` CLI command to validate and upload all sub-agent definitions under a folder, with support for version overrides, dry-run, force publish, and verbose output (#121)
-- Add `lint subagents` CLI mode to validate every sub-agent markdown file in a directory and report duplicate sub-agent names
+- Add interactive gallery UI with client-side search, skill version history navigation, and a resource browser for viewing SKILL.md and resource files
+- Add first-class sub-agent support — storage endpoints, CLI commands (`publish-subagent`, `list-subagents`, `delete-subagent`, `download-subagent`, `lint subagent`), and batch publishing
+- Add native manifest endpoints (`/manifest.json` and linked documents) for RFC-compatible skill and sub-agent sync
+- Add deterministic `archive.zip` downloads for resourceful skills
+- Add API versioning and native manifest client support in `Netclaw.SkillClient`
+- Add copy button to code blocks in the gallery
 
 **Improvements**
-- Improve skill search relevance by prioritizing exact and prefix skill-name matches ahead of description-only matches (#121)
-- Improve gallery UX by making cards interactive, wiring version history rows to version URLs, and adding a keyboard hint to the search input
-
-**Internal**
-- Extend sub-agent validation and publishing flow to accept `version` frontmatter (including `metadata.version`) and add validation tests for batch publish and route parsing logic (#121)
-
-#### 0.4.0-beta.2 July 3rd 2026 ####
-
-**New Features**
-- Add native manifest endpoints (`/manifest.json` and linked skill identity/version documents) for destination-agnostic, RFC-compatible sync (#96)
-- Add first-class sub-agent support — `/subagents` storage with upload, list, delete, and `agent.md` download endpoints, and NetClaw sub-agent markdown frontmatter validation (#97)
-- Add native sub-agent manifest endpoints (`/manifest/subagents/...`) that traverse from the root native manifest alongside skills (#98)
-- Add sub-agent support to `Netclaw.SkillClient` — upload, list, download, delete, and native manifest traversal helpers (#99)
-- Add CLI sub-agent commands: `lint subagent`, `publish-subagent`, and `download-subagent` for validating, publishing, and syncing sub-agents from the command line (#100)
-- Add deterministic `archive.zip` downloads for resourceful skills, backfilled for existing skill versions (#95)
-
-**Improvements**
-- Preserve executable permission bits (Unix mode) for skill resources — packaged helper scripts in downloaded archives no longer need a manual `chmod` (#103)
-
-**CI/CD**
-- Skip the Docker `latest` tag and mark GitHub releases as prerelease automatically when publishing a prerelease tag (#101)
+- Improve skill search relevance with exact and prefix name matching prioritized over description-only matches
+- Preserve executable permission bits (Unix mode) for skill resources in downloaded archives
 
 **Security**
-- Resolve CVE-2026-49451 / GHSA-v5pm-xwqc-g5wc by pinning the transitive `Microsoft.OpenApi` dependency to 2.7.5 (#104)
-- Resolve GHSA-hv8m-jj95-wg3x (MessagePack/StreamJsonRpc LZ4 decompression DoS) by upgrading MessagePack from 2.5.301 to 3.1.7 (#76, #80)
-- Suppress GHSA-2m69-gcr7-jv3q (SQLitePCLRaw) pending an upstream patched release (#76)
+- Resolve CVE-2026-49451 / GHSA-v5pm-xwqc-g5wc by pinning `Microsoft.OpenApi` to 2.7.5 (#104)
+- Resolve GHSA-hv8m-jj95-wg3x (MessagePack/StreamJsonRpc LZ4 decompression DoS) by upgrading MessagePack to 3.1.8
 
-**Dependency Updates**
-- Bump Microsoft.Data.Sqlite from 10.0.7 to 10.0.9 (#106)
-- Bump Microsoft.Extensions.Http from 10.0.7 to 10.0.9 (#107)
-- Bump Dapper from 2.1.72 to 2.1.79 (#78)
-- Bump Microsoft.AspNetCore.OpenApi from 10.0.7 to 10.0.9 (#83)
+
 
 #### 0.3.1 May 15th 2026 ####
 
