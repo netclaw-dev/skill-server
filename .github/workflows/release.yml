@@ -177,7 +177,7 @@ jobs:
         global-json-file: "./global.json"
 
     - name: "Login to GitHub Container Registry"
-      uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
+      uses: docker/login-action@06fb636fac595d6fb4b28a5dfcb21a6f5091859c
       with:
         registry: ${{ env.CONTAINER_REGISTRY }}
         username: ${{ github.actor }}
