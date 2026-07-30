@@ -11,9 +11,28 @@ function UpdateVersionAndReleaseNotes {
     $xmlContent = New-Object XML
     $xmlContent.Load($XmlFilePath)
 
-    # Update VersionPrefix and PackageReleaseNotes
+    if (-not $ReleaseNotesResult.VersionCore) {
+        throw "Get-ReleaseNotes did not return VersionCore for metadata update"
+    }
+
+    # Update VersionPrefix/VersionSuffix and PackageReleaseNotes
     $versionPrefixElement = $xmlContent.SelectSingleNode("//VersionPrefix")
-    $versionPrefixElement.InnerText = $ReleaseNotesResult.Version
+    if (-not $versionPrefixElement) {
+        throw "Directory.Build.props is missing VersionPrefix"
+    }
+
+    $versionPrefixElement.InnerText = $ReleaseNotesResult.VersionCore
+
+    $versionSuffixElement = $xmlContent.SelectSingleNode("//VersionSuffix")
+    if (-not $versionSuffixElement) {
+        throw "Directory.Build.props is missing VersionSuffix"
+    }
+
+    $versionSuffixElement.InnerText = $ReleaseNotesResult.VersionSuffix
+
+    if ($ReleaseNotesResult.VersionSuffix.Length -eq 0) {
+        Write-Output "Updated release version suffix to empty (stable release)"
+    }
 
     $packageReleaseNotesElement = $xmlContent.SelectSingleNode("//PackageReleaseNotes")
     $packageReleaseNotesElement.InnerText = $ReleaseNotesResult.ReleaseNotes

@@ -4,32 +4,137 @@ function Get-ReleaseNotes {
         [string]$MarkdownFile
     )
 
-    # Read markdown file content
-    $content = Get-Content -Path $MarkdownFile -Raw
+    # Read markdown file content explicitly as UTF-8 to avoid platform-dependent defaults.
+    # Fall back to UTF-16 only if the UTF-8 read returns no lines.
+    $lines = [System.IO.File]::ReadAllLines($MarkdownFile, [System.Text.Encoding]::UTF8)
+    if (-not $lines -or $lines.Count -eq 0) {
+        $lines = [System.IO.File]::ReadAllLines($MarkdownFile, [System.Text.Encoding]::Unicode)
+    }
 
-    # Split content based on headers
-    $sections = $content -split "####"
+    $versionPattern = '^(?<core>(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))(?:-(?<suffix>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+(?<build>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$'
 
     # Output object to store result
     $outputObject = [PSCustomObject]@{
-        Version       = $null
-        Date          = $null
-        ReleaseNotes  = $null
+        Version      = $null
+        VersionCore  = $null
+        VersionSuffix = $null
+        Date         = $null
+        ReleaseNotes = $null
     }
 
-    # Check if we have at least 3 sections (1. Before the header, 2. Header, 3. Release notes)
-    if ($sections.Count -ge 3) {
-        $header = $sections[1].Trim()
-        $releaseNotes = $sections[2].Trim()
+    if (-not $lines -or $lines.Count -eq 0) {
+        throw "Unable to parse release notes from $MarkdownFile."
+    }
 
-        # Extract version and date from the header
-        $headerParts = $header -split " ", 2
-        if ($headerParts.Count -eq 2) {
-            $outputObject.Version = $headerParts[0]
-            $outputObject.Date = $headerParts[1]
+    function Get-LeadingNoiseFreeText {
+        param(
+            [Parameter()]
+            [AllowEmptyString()]
+            [string]$Line
+        )
+
+        while (-not [string]::IsNullOrEmpty($Line)) {
+            $firstCharacter = $Line[0]
+            if ([char]::IsWhiteSpace($firstCharacter) -or [char]::IsControl($firstCharacter) -or [System.Char]::GetUnicodeCategory($firstCharacter) -eq [System.Globalization.UnicodeCategory]::Format) {
+                $Line = $Line.Substring(1)
+                continue
+            }
+
+            break
         }
 
-        $outputObject.ReleaseNotes = $releaseNotes
+        return $Line
+    }
+
+    function Get-ReleaseHeaderCandidate {
+        param(
+            [Parameter()]
+            [AllowEmptyString()]
+            [string]$Line
+        )
+
+        $candidate = Get-LeadingNoiseFreeText -Line $Line
+        $headerIndex = $candidate.IndexOf('####')
+        if ($headerIndex -ge 0) {
+            return $candidate.Substring($headerIndex)
+        }
+
+        return $null
+    }
+
+    function Get-ReleaseHeaderData {
+        param(
+            [Parameter()]
+            [AllowEmptyString()]
+            [string]$Line
+        )
+
+        $candidate = Get-ReleaseHeaderCandidate -Line $Line
+        if (-not $candidate) {
+            return $null
+        }
+
+        $normalizedHeaderLine = $candidate -replace "^####\s*", ""
+        $normalizedHeaderLine = $normalizedHeaderLine -replace "\s*####\s*$", ""
+
+        $headerParts = $normalizedHeaderLine -split " ", 2
+        $versionText = $headerParts[0]
+
+        $versionMatch = [regex]::Match($versionText, $versionPattern)
+        if (-not $versionMatch.Success) {
+            return $null
+        }
+
+        return [PSCustomObject]@{
+            HeaderParts = $headerParts
+            VersionText = $versionText
+            VersionCore = $versionMatch.Groups['core'].Value
+            VersionSuffix = $versionMatch.Groups['suffix'].Value
+        }
+    }
+    
+    # Find the first valid release header line.
+    $headerData = $null
+    $headerLineIndex = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $candidate = Get-ReleaseHeaderData -Line $lines[$i]
+        if ($candidate) {
+            $headerData = $candidate
+            $headerLineIndex = $i
+            break
+        }
+    }
+
+    if ($null -eq $headerData) {
+        throw "Unable to parse release notes from $MarkdownFile."
+    }
+
+    # Extract header text, then version/date.
+    $headerParts = $headerData.HeaderParts
+    $versionText = $headerData.VersionText
+
+    $outputObject.Version = $versionText
+    $outputObject.VersionCore = $headerData.VersionCore
+    $outputObject.VersionSuffix = if ($headerData.VersionSuffix) { $headerData.VersionSuffix } else { '' }
+
+    if ($headerParts.Count -ge 2) {
+        $outputObject.Date = $headerParts[1]
+    }
+
+    # Grab release notes from this first section only.
+    $releaseNotesEndLine = $lines.Count
+    for ($i = $headerLineIndex + 1; $i -lt $lines.Count; $i++) {
+        if (Get-ReleaseHeaderData -Line $lines[$i]) {
+            $releaseNotesEndLine = $i
+            break
+        }
+    }
+
+    if ($releaseNotesEndLine -gt $headerLineIndex + 1) {
+        $outputObject.ReleaseNotes = ($lines[($headerLineIndex + 1)..($releaseNotesEndLine - 1)] -join "`r`n").Trim()
+    }
+    else {
+        $outputObject.ReleaseNotes = ""
     }
 
     # Return the output object
