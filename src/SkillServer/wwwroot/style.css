@@ -18,7 +18,7 @@ a:hover{color:var(--teal-dark)}
 .nav{position:sticky;top:0;z-index:100;background:rgba(26,26,46,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
 .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:64px}
 .nav-brand{display:flex;align-items:center;gap:12px}
-.nav-brand svg{height:28px;width:auto}
+.nav-brand svg,.nav-brand img{height:28px;width:auto}
 .nav-brand-text{font-size:1.1rem;font-weight:700;letter-spacing:-.02em;color:var(--text)}
 .nav-brand-text span{color:var(--text-muted);font-weight:400;margin-left:4px}
 .nav-links{display:flex;align-items:center;gap:8px}
