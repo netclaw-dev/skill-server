@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sub-agents - SkillServer Gallery</title>
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +16,7 @@
 <nav class="nav">
   <div class="nav-inner">
     <a href="/" class="nav-brand">
-      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 2L4 8v16l12 6 12-6V8L16 2z" fill="#512BD4"/><path d="M16 6l-8 4v12l8 4 8-4V10L16 6z" fill="#1a1a2e"/><path d="M14 14c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z" fill="#00D4AA"/><path d="M12 20l4-2 4 2-4 2-4-2z" fill="#00D4AA"/><path d="M10 18l2 2-2 2-2-2 2-2z" fill="#512BD4"/><path d="M22 18l-2 2 2 2 2-2-2-2z" fill="#512BD4"/></svg>
+      <img src="/logo.svg" alt="" width="32" height="32">
       <div class="nav-brand-text">SkillServer<span>Gallery</span></div>
     </a>
     <div class="nav-links">
@@ -46,15 +48,16 @@
 <script type="module">
 import { fetchSubAgents, fetchSubAgentVersions, fetchAgentMd } from '/js/api.js';
 import { renderAppVersion } from '/js/footer.js';
-import { getSubAgentName } from '/js/router.js';
+import { getSubAgentName, getSubAgentVersion } from '/js/router.js';
 
 renderAppVersion();
 
 const app = document.getElementById('app');
 const agentName = getSubAgentName();
+const requestedVersion = getSubAgentVersion();
 
 if (agentName) {
-    await renderDetail(agentName);
+    await renderDetail(agentName, requestedVersion);
 } else {
     await renderListing();
 }
@@ -82,28 +85,32 @@ async function renderListing() {
     }
 }
 
-async function renderDetail(name) {
+async function renderDetail(name, version) {
     document.title = `${name} - SkillServer Gallery`;
     try {
         const versions = await fetchSubAgentVersions(name);
-        const latest = versions.find(v => v.isLatest) || versions[0];
-        const agentMd = await fetchAgentMd(name, latest.version);
+        const targetVersion = version
+            ? (versions.find(v => v.version === version) || versions.find(v => v.isLatest) || versions[0])
+            : (versions.find(v => v.isLatest) || versions[0]);
+        document.title = `${name}${version ? ' v' + targetVersion.version : ''} - SkillServer Gallery`;
+        const agentMd = await fetchAgentMd(name, targetVersion.version);
         app.innerHTML = `
             <div class="breadcrumb">
                 <a href="/">Home</a> <span>›</span>
                 <a href="/subagents/">Sub-agents</a> <span>›</span>
-                ${name}
+                <a href="/subagents/${encodeURIComponent(name)}/">${name}</a>
+                ${version ? `<span>›</span><span>v${targetVersion.version}</span>` : ''}
             </div>
             <div class="detail-header">
                 <div class="detail-title">
                     <h1>${name}</h1>
-                    <span class="detail-version">v${latest.version} ${latest.isLatest ? '<span class="latest">← latest</span>' : ''}</span>
+                    <span class="detail-version">v${targetVersion.version} ${targetVersion.isLatest ? '<span class="latest">← latest</span>' : ''}</span>
                 </div>
-                <p class="detail-description">${latest.description || ''}</p>
+                <p class="detail-description">${targetVersion.description || ''}</p>
                 <div class="detail-meta">
-                    <div class="meta-item"><span class="meta-label">Role</span><span class="meta-value">${latest.modelRole || '—'}</span></div>
-                    <div class="meta-item"><span class="meta-label">Timeout</span><span class="meta-value">${latest.timeoutSeconds ? latest.timeoutSeconds + 's' : '—'}</span></div>
-                    <div class="meta-item"><span class="meta-label">Visibility</span><span class="meta-value">${latest.visibility || '—'}</span></div>
+                    <div class="meta-item"><span class="meta-label">Role</span><span class="meta-value">${targetVersion.modelRole || '—'}</span></div>
+                    <div class="meta-item"><span class="meta-label">Timeout</span><span class="meta-value">${targetVersion.timeoutSeconds ? targetVersion.timeoutSeconds + 's' : '—'}</span></div>
+                    <div class="meta-item"><span class="meta-label">Visibility</span><span class="meta-value">${targetVersion.visibility || '—'}</span></div>
                     <div class="meta-item"><span class="meta-label">Versions</span><span class="meta-value">${versions.length}</span></div>
                 </div>
             </div>
@@ -128,11 +135,11 @@ async function renderDetail(name) {
                 </div>
                 <div class="version-list">
                     ${versions.map(v => `
-                        <div class="version-row ${v.isLatest ? 'current' : ''}">
-                            <span class="version-tag ${v.isLatest ? 'latest' : ''}">v${v.version}</span>
+                        <a href="/subagents/${encodeURIComponent(name)}/v/${encodeURIComponent(v.version)}/" class="version-row ${v.version === targetVersion.version ? 'current' : ''} ${v.isLatest && v.version !== targetVersion.version ? 'latest-link' : ''}" role="button" tabindex="0">
+                            <span class="version-tag ${v.version === targetVersion.version && v.isLatest ? 'latest' : ''}">v${v.version}</span>
                             <span class="version-date">${formatDate(v.publishedAt)}</span>
                             <span class="version-size">${formatBytes(v.sizeBytes)}</span>
-                        </div>
+                        </a>
                     `).join('')}
                 </div>
             </section>
