@@ -27,7 +27,7 @@ public sealed partial class SubAgentUploadService
         _repository = repository;
         _blobStorage = blobStorage;
         _logger = logger;
-        _yamlDeserializer = new DeserializerBuilder()
+        _yamlDeserializer = new StaticDeserializerBuilder(new SkillServerYamlContext())
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
             .Build();
