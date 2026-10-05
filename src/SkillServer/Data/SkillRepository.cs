@@ -11,20 +11,14 @@ using SkillServer.Models;
 namespace SkillServer.Data;
 
 /// <summary>
-/// Initializes Dapper type handlers for SQLite.
+/// Dapper type handler registration for SQLite.
+/// Under NativeAOT the handler is declared via the assembly-level
+/// <c>TypeHandler</c> attribute (see Program.cs) so the Dapper.AOT source
+/// generator can bind it statically instead of via reflection at startup.
 /// </summary>
 public static class DapperConfiguration
 {
-    private static bool _initialized;
-
-    public static void Initialize()
-    {
-        if (_initialized) return;
-        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
-        _initialized = true;
-    }
-
-    private sealed class DateTimeOffsetHandler : SqlMapper.TypeHandler<DateTimeOffset>
+    public sealed class DateTimeOffsetHandler : SqlMapper.TypeHandler<DateTimeOffset>
     {
         public override void SetValue(IDbDataParameter parameter, DateTimeOffset value) =>
             parameter.Value = value.ToString("O");
@@ -43,7 +37,6 @@ public sealed class SkillRepository
 
     public SkillRepository(DatabaseInitializer initializer)
     {
-        DapperConfiguration.Initialize();
         _connectionString = initializer.ConnectionString;
     }
 

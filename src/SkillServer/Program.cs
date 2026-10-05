@@ -3,11 +3,15 @@
 //      Copyright (C) 2026 - 2026 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
+using Dapper;
 using Microsoft.AspNetCore.StaticFiles;
 using SkillServer;
 using SkillServer.Data;
 using SkillServer.Models;
 using SkillServer.Services;
+
+[module: DapperAot]
+[module: TypeHandler(typeof(DateTimeOffset), typeof(DapperConfiguration.DateTimeOffsetHandler))]
 
 var builder = WebApplication.CreateBuilder(args);
 

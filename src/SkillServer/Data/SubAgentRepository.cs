@@ -15,7 +15,6 @@ public sealed class SubAgentRepository
 
     public SubAgentRepository(DatabaseInitializer initializer)
     {
-        DapperConfiguration.Initialize();
         _connectionString = initializer.ConnectionString;
     }
 
