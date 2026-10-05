@@ -16,7 +16,7 @@
   <!-- Data (Dapper for AOT compatibility) -->
   <ItemGroup Label="Data">
     <PackageVersion Include="Dapper" Version="2.1.79" />
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.10" />
   </ItemGroup>
 
   <!-- Utilities -->
