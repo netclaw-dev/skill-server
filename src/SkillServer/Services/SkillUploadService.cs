@@ -32,7 +32,7 @@ public sealed partial class SkillUploadService
         _repository = repository;
         _blobStorage = blobStorage;
         _logger = logger;
-        _yamlDeserializer = new DeserializerBuilder()
+        _yamlDeserializer = new StaticDeserializerBuilder(new SkillServerYamlContext())
             .WithNamingConvention(HyphenatedNamingConvention.Instance)
             .WithTypeConverter(new CoercingStringMapConverter())
             .IgnoreUnmatchedProperties()

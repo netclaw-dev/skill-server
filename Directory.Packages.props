@@ -15,13 +15,17 @@
 
   <!-- Data (Dapper for AOT compatibility) -->
   <ItemGroup Label="Data">
-    <PackageVersion Include="Dapper" Version="2.1.79" />
+    <PackageVersion Include="Dapper" Version="2.1.89" />
+    <!-- AOT source generator for Dapper. Build-time only. -->
+    <PackageVersion Include="Dapper.AOT" Version="1.1.0" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.9" />
   </ItemGroup>
 
   <!-- Utilities -->
   <ItemGroup Label="Utilities">
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+    <!-- AOT static source generator for YamlDotNet. Build-time only analyzer. -->
+    <PackageVersion Include="Vecc.YamlDotNet.Analyzers.StaticGenerator" Version="18.1.0" />
     <PackageVersion Include="SharpZipLib" Version="1.4.2" />
   </ItemGroup>
 

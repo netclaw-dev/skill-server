@@ -20,6 +20,7 @@
   <PropertyGroup Label="ServerRuntimeConfig">
     <TieredPGO>true</TieredPGO>
     <ServerGarbageCollection>true</ServerGarbageCollection>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Dapper.AOT</InterceptorsNamespaces>
   </PropertyGroup>
 
   <!-- AOT Preparation (MVC not fully AOT-compatible yet, but we prepare where possible) -->
@@ -34,9 +35,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Dapper" />
+    <PackageReference Include="Dapper.AOT" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="YamlDotNet" />
     <PackageReference Include="SharpZipLib" />
+    <PackageReference Include="Vecc.YamlDotNet.Analyzers.StaticGenerator" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
