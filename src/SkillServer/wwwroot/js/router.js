@@ -37,6 +37,14 @@ export function getSubAgentName() {
     return null;
 }
 
+export function getSubAgentVersion() {
+    const segments = getPathSegments();
+    if (segments.length >= 4 && segments[0] === 'subagents' && segments[2] === 'v') {
+        return decodeURIComponent(segments[3]);
+    }
+    return null;
+}
+
 export function isListingPage() {
     const segments = getPathSegments();
     return segments.length <= 1;
