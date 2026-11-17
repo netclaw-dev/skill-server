@@ -39,19 +39,68 @@ SkillServer implements Agent Skills standards and defines native extensions for 
 
 ## Quick Start
 
+### Set the bootstrap key first
+
+Generate and save a strong random secret in your password manager. Supply it before the first startup; **a database with no API keys leaves publishing, deletion, and key management unauthenticated**.
+
+In a private Bash terminal, load the secret without putting it in shell history:
+
+```bash
+read -r -s -p "Bootstrap API key: " SKILLSERVER__APIKEY
+printf '\n'
+export SKILLSERVER__APIKEY
+```
+
+For automated deployments, inject the value through your deployment secret manager. Keep it out of committed Compose files and `.env` files.
+
 ### Docker
 
 ```bash
+# The included Compose file maps SKILLSERVER_APIKEY to the server variable.
+export SKILLSERVER_APIKEY="$SKILLSERVER__APIKEY"
 docker compose -f docker/docker-compose.yml up -d
+unset SKILLSERVER_APIKEY SKILLSERVER__APIKEY
 ```
 
 ### .NET
 
 ```bash
-dotnet run --project src/SkillServer
+dotnet run --project src/SkillServer --urls http://localhost:8080
+# After stopping the server:
+unset SKILLSERVER__APIKEY
 ```
 
-The server will start at `http://localhost:8080`.
+The server will start at `http://localhost:8080`. Reads and discovery remain unauthenticated; use a private network or proxy access policy for private content.
+
+### Create a publishing key
+
+Install the [host CLI](src/Netclaw.SkillServer.Cli/README.md#installation), then authenticate with the bootstrap key (or another existing valid key):
+
+```bash
+export SKILLSERVER_URL=http://localhost:8080
+read -r -s -p "Existing SkillServer API key: " SKILLSERVER_API_KEY
+printf '\n'
+export SKILLSERVER_API_KEY
+skillserver api-key list
+skillserver api-key create --label ci-publish
+unset SKILLSERVER_API_KEY
+```
+
+Run creation in a private terminal: it prints the new `sk-...` key once. Save the actual key immediately in your secret manager. The label is a name you choose; the key is generated and registered by the server. An arbitrary string saved in CI will not authenticate.
+
+For GitHub Actions, save the returned key as the **`SKILLSERVER_API_KEY` secret** and pass it to the CLI:
+
+```yaml
+- name: Publish skills
+  env:
+    SKILLSERVER_URL: https://skills.example.com
+    SKILLSERVER_API_KEY: ${{ secrets.SKILLSERVER_API_KEY }}
+  run: skillserver publish-all ./skills
+```
+
+Create the secret under repository **Settings → Secrets and variables → Actions**, or under the deployment environment if the job uses one. See [GitHub secret setup](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions).
+
+Install the CLI and configure network access in preceding workflow steps. Avoid running key creation in CI logs. Every valid key can publish, delete, and manage other keys; a dedicated label helps rotation but does not restrict permissions. See [key management and rotation](#managing-keys).
 
 ## Configuration
 
@@ -98,9 +147,9 @@ Configuration is via environment variables or `appsettings.json`:
 
 | Endpoint | Description |
 |----------|-------------|
-| `POST /api-keys` | Create a new API key 🔑 |
-| `GET /api-keys` | List all API keys (without secrets) 🔑 |
-| `DELETE /api-keys/{id}` | Revoke an API key 🔑 |
+| `POST /api/v1/api-keys` | Create a new API key 🔑 |
+| `GET /api/v1/api-keys` | List all API keys (without secrets) 🔑 |
+| `DELETE /api/v1/api-keys/{id}` | Revoke an API key 🔑 |
 
 🔑 = Requires `Authorization: Bearer <key>` header (when API keys are configured)
 
@@ -283,33 +332,23 @@ SkillServer uses **API key authentication** to protect write operations. Read an
 
 ### Bootstrap
 
-Set the `SKILLSERVER__APIKEY` environment variable before first run:
+Follow [Quick Start](#set-the-bootstrap-key-first) to inject `SKILLSERVER__APIKEY` before first startup. The server stores its hash as the "bootstrap" key only if the database contains no keys. Changing that environment variable later does **not** rotate an existing key.
 
-```bash
-SKILLSERVER__APIKEY=sk-my-secret-key dotnet run --project src/SkillServer
-```
-
-The server hashes and stores this as a "bootstrap" key on first startup. Once any key exists in the database, the environment variable is ignored on subsequent starts.
+`SKILLSERVER__APIKEY` configures the server bootstrap. `SKILLSERVER_API_KEY` authenticates the host CLI or CI client. They are different variables.
 
 ### Managing Keys
 
-All key management endpoints require an existing valid API key:
+Authenticate the host CLI with an existing valid key as shown in [Quick Start](#create-a-publishing-key), then:
 
 ```bash
-# Create a new key
-curl -X POST http://localhost:8080/api-keys \
-  -H "Authorization: Bearer sk-your-existing-key" \
-  -H "Content-Type: application/json" \
-  -d '{"label": "ci-deploy"}'
-
-# List keys (never shows raw key or hash)
-curl http://localhost:8080/api-keys \
-  -H "Authorization: Bearer sk-your-existing-key"
-
-# Revoke a key (cannot delete the last remaining key)
-curl -X DELETE http://localhost:8080/api-keys/2 \
-  -H "Authorization: Bearer sk-your-existing-key"
+skillserver api-key create --label ci-publish
+skillserver api-key list
+skillserver api-key delete 2
 ```
+
+Creation returns a new secret once; listing returns IDs, labels, and dates, never the raw key or hash. `--expires-at <date>` optionally sets an expiration on creation. All valid keys have the same permissions, including key management.
+
+To rotate a key, create a replacement, save it in your client or CI secret store, verify an authenticated command such as `skillserver api-key list` with the replacement, then delete the old key by its ID. No server restart or database reset is needed. The last remaining key cannot be deleted. If a newly created key is lost, create another using an existing valid key and revoke the lost key.
 
 ### Backwards Compatibility
 
