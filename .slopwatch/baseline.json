@@ -1,17 +1,17 @@
 {
-  "version": 1,
-  "createdAt": "2026-04-23T01:15:57.3247724+00:00",
-  "updatedAt": "2026-04-23T01:15:57.3298555+00:00",
-  "description": "Initial baseline created by 'slopwatch init' on 2026-04-23 01:15:57 UTC",
+  "version": 2,
+  "createdAt": "2026-11-17T00:51:36.5572546+00:00",
+  "updatedAt": "2026-11-17T00:51:36.5584327+00:00",
+  "description": "Initial baseline created by 'slopwatch init' on 2026-11-17 00:51:36 UTC",
   "entries": [
     {
-      "hash": "9d4a53dc5193e639",
+      "hash": "36755464e3385bc3",
       "ruleId": "SW005",
       "filePath": "Directory.Build.props",
-      "lineNumber": 20,
+      "lineNumber": 19,
       "codeSnippet": "<NoWarn>$(NoWarn);CS1591</NoWarn>",
       "message": "Adding warnings to NoWarn: CS1591",
-      "baselinedAt": "2026-04-23T01:15:57.32982+00:00"
+      "baselinedAt": "2026-11-17T00:51:36.5584077+00:00"
     }
   ]
 }
