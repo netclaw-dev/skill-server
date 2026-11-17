@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <AspireVersion>13.1.2</AspireVersion>
+    <AspireVersion>13.6.5</AspireVersion>
   </PropertyGroup>
 
   <!-- ASP.NET Core Dependencies -->
@@ -10,7 +10,9 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
     <!-- Pin to patched version to avoid CVE-2026-49451 (stack overflow on circular schema refs). -->
     <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.9" />
+    <!-- 10.0.14 matches the minimum Aspire 13.6.5 requires; lower pins trigger NU1109
+         package downgrade errors in projects that reference Aspire.Hosting.Testing. -->
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.14" />
   </ItemGroup>
 
   <!-- Data (Dapper for AOT compatibility) -->
@@ -45,10 +47,12 @@
     <PackageVersion Include="Microsoft.Playwright" Version="1.52.0" />
   </ItemGroup>
   <!-- Transitive security pin: Aspire.Hosting.AppHost → StreamJsonRpc pulls in
-       MessagePack 2.5.192, flagged by NuGetAudit (GHSA-hv8m-jj95-wg3x, LZ4
-       decompression DoS). Pin to the patched v2 (2.5.301) to clear the audit. -->
+       MessagePack 2.5.302, flagged by NuGetAudit (GHSA-hv8m-jj95-wg3x, LZ4
+       decompression DoS). Pin to the patched v3 line to clear the audit.
+       3.1.12 also clears GHSA-qhrr-8q5h-9q3h (nested arrays blow past buffer
+       length limits), which affects 3.0.0 through 3.1.8. -->
   <ItemGroup>
-    <PackageVersion Include="MessagePack" Version="3.1.8" />
+    <PackageVersion Include="MessagePack" Version="3.1.12" />
   </ItemGroup>
   <!-- Transitive audit suppress: Microsoft.Data.Sqlite → SQLitePCLRaw.lib.e_sqlite3 2.1.11
        is flagged by NuGetAudit (GHSA-2m69-gcr7-jv3q, CVE-2025-6965 — SQLite < 3.50.2
